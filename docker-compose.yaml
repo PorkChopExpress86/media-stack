@@ -72,6 +72,7 @@ services:
   #     - plex_data:/config
   #     - ${media_path}:/media
   #   restart: unless-stopped
+
   vpn:
     image: qmcgaw/gluetun:latest
     container_name: vpn
@@ -114,7 +115,6 @@ services:
       - VPN_PORT_FORWARDING=on
       # - VPN_PORT_FORWARDING_STATUS_FILE=/gluetun/piaportforward.json
     restart: unless-stopped
-
 
   # vpn:
   #   image: thrnz/docker-wireguard-pia
@@ -173,7 +173,6 @@ services:
   #     timeout: 10s
   #     retries: 3
   #   restart: unless-stopped
-
 
 ######### *ARR SERVERS#########################################################
   prowlarr:
@@ -297,18 +296,18 @@ services:
       - vpn
 
 ########## AUDIOBOOKSHELF######################################################
-  # audiobookshelf:
-  #   image: ghcr.io/advplyr/audiobookshelf:latest
-  #   ports:
-  #     - 13378:80
-  #   volumes:
-  #     - ${audiobooks}:/audiobooks
-  #     - ${podcasts}:/podcasts
-  #     - audiobookshelf_data:/config
-  #     - audiobookshelf_data:/metadata
-  #   environment:
-  #     - TZ=Chicago/USA
-  #   restart: unless-stopped
+  audiobookshelf:
+    image: ghcr.io/advplyr/audiobookshelf:latest
+    ports:
+      - 13378:80
+    volumes:
+      - ${audiobooks}:/audiobooks
+      - ${podcasts}:/podcasts
+      - audiobookshelf_data:/config
+      - audiobookshelf_data:/metadata
+    environment:
+      - TZ=Chicago/USA
+    restart: unless-stopped
 
 #########IMMICH SERVER  #######################################################
   immich-server:
@@ -386,7 +385,7 @@ volumes:
   qbittorrent_data:
   lidarr_data:
   readarr_data:
-  # audiobookshelf_data:
+  audiobookshelf_data:
   model-cache:
   vpn_data:
   bazarr_data:
