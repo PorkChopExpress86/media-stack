@@ -32,60 +32,55 @@ services:
   jellyfin:
     container_name: jellyfin
     image: lscr.io/linuxserver/jellyfin:latest
-    network_mode: host
+    # network_mode: host
+    ports:
+      - 8096:8096
     environment:
       - PUID=1000
       - PGID=1000
       - TZ=US/Central
       - JELLYFIN_PublishedServerUrl=${local_ip}
-      - DOCKER_MODS=linuxserver/mods:jellyfin-opencl-intel
+      # - DOCKER_MODS=linuxserver/mods:jellyfin-opencl-intel
     volumes:
       - jellyfin_data:/config
       - jellyfin_cache:/cache
       - ${media_path}:/media
     devices:
       - /dev/dri:/dev/dri
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     restart: unless-stopped
 
-  plex:
-    container_name: plex
-    image: lscr.io/linuxserver/plex:latest
-    network_mode: host
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=US/Central
-      - VERSION=docker
-      - PLEX_CLAIM=${plex_claim}
-    devices:
-      - /dev/dri:/dev/dri
-    volumes:
-      - plex_data:/config
-      - ${media_path}:/media
-    restart: unless-stopped
-
+  # plex:
+  #   container_name: plex
+  #   image: lscr.io/linuxserver/plex:latest
+  #   network_mode: host
+  #   environment:
+  #     - PUID=1000
+  #     - PGID=1000
+  #     - TZ=US/Central
+  #     - VERSION=docker
+  #     - PLEX_CLAIM=${plex_claim}
+  #   devices:
+  #     - /dev/dri:/dev/dri
+  #   volumes:
+  #     - plex_data:/config
+  #     - ${media_path}:/media
+  #   restart: unless-stopped
   vpn:
-    image: thrnz/docker-wireguard-pia
+    image: qmcgaw/gluetun:latest
     container_name: vpn
-    volumes:
-        # Auth token is stored here
-        - vpn_data:/pia
-        # If enabled, the forwarded port is dumped to /pia-shared/port.dat for potential use in other containers
-        - ./pia-shared:/pia-shared
+    # container_name: gluetun
+    # line above must be uncommented to allow external containers to connect. See https:\github.com/qdm12/gluetun/wiki/Connect-a-container-to-gluetun#external-container-to-gluetun
     cap_add:
       - NET_ADMIN
-      # SYS_MODULE might not be needed with a 5.6+ kernel?
-      - SYS_MODULE
-    environment:
-      # The following env vars are required:
-      - LOC=ca_ontario
-      - USER=${vpn_username}
-      - PASS=${vpn_password}
-      # The rest are optional:
-      - LOCAL_NETWORK=192.168.1.0/24
-      - KEEPALIVE=25
-      - VPNDNS=10.0.0.241,10.0.0.243
-      - PORT_FORWARDING=1
+    devices:
+      - /dev/net/tun:/dev/net/tun
     ports:
       - 8888:8888/tcp # HTTP proxy
       - 8388:8388/tcp # Shadowsocks
@@ -100,41 +95,49 @@ services:
       - 9696:9696
       # Lidarr
       - 8686:8686
-      # Bazarr
-      - 6767:6767
       # Qbittorrent
       - 8080:8080
       - 6881:6881
       - 6881:6881/udp
     sysctls:
-      # The wg-quick script tries to set this when setting up routing, however this requires running the container
-      # with the --privileged flag set. Setting it here instead if needed means the container can be run with lower
-      # privileges. This only needs setting if strict reverse path filtering (rp_filter=1) is used.
-      - net.ipv4.conf.all.src_valid_mark=1
-      # May as well disable ipv6. Should be blocked anyway.
-      - net.ipv6.conf.default.disable_ipv6=1
       - net.ipv6.conf.all.disable_ipv6=1
-      - net.ipv6.conf.lo.disable_ipv6=1
-    healthcheck:
-      test: ping -c 1 www.google.com || exit 1
-      interval: 30s
-      timeout: 10s
-      retries: 3
+    volumes:
+      - gluetun_data:/gluetun
+    environment:
+      # See https:\github.com/qdm12/gluetun/wiki
+      - VPN_SERVICE_PROVIDER=private internet access
+      - OPENVPN_USER=${vpn_username}
+      - OPENVPN_PASSWORD=${vpn_password}
+      - SERVER_REGIONS=Netherlands
+      - TZ=Chicago/USA
+      # - PORT_FORWARD_ONLY=true
+      - VPN_PORT_FORWARDING=on
+      # - VPN_PORT_FORWARDING_STATUS_FILE=/gluetun/piaportforward.json
     restart: unless-stopped
-
-    
-
 
 
   # vpn:
-  #   image: qmcgaw/gluetun:latest
+  #   image: thrnz/docker-wireguard-pia
   #   container_name: vpn
-  #   # container_name: gluetun
-  #   # line above must be uncommented to allow external containers to connect. See https:\github.com/qdm12/gluetun/wiki/Connect-a-container-to-gluetun#external-container-to-gluetun
+  #   volumes:
+  #       # Auth token is stored here
+  #       - vpn_data:/pia
+  #       # If enabled, the forwarded port is dumped to /pia-shared/port.dat for potential use in other containers
+  #       - ./pia-shared:/pia-shared
   #   cap_add:
   #     - NET_ADMIN
-  #   devices:
-  #     - /dev/net/tun:/dev/net/tun
+  #     # SYS_MODULE might not be needed with a 5.6+ kernel?
+  #     - SYS_MODULE
+  #   environment:
+  #     # The following env vars are required:
+  #     - LOC=ca_ontario
+  #     - USER=${vpn_username}
+  #     - PASS=${vpn_password}
+  #     # The rest are optional:
+  #     - LOCAL_NETWORK=192.168.1.0/24
+  #     - KEEPALIVE=25
+  #     - VPNDNS=10.0.0.241,10.0.0.243
+  #     - PORT_FORWARDING=1
   #   ports:
   #     - 8888:8888/tcp # HTTP proxy
   #     - 8388:8388/tcp # Shadowsocks
@@ -149,39 +152,30 @@ services:
   #     - 9696:9696
   #     # Lidarr
   #     - 8686:8686
+  #     # Bazarr
+  #     - 6767:6767
   #     # Qbittorrent
   #     - 8080:8080
   #     - 6881:6881
   #     - 6881:6881/udp
   #   sysctls:
+  #     # The wg-quick script tries to set this when setting up routing, however this requires running the container
+  #     # with the --privileged flag set. Setting it here instead if needed means the container can be run with lower
+  #     # privileges. This only needs setting if strict reverse path filtering (rp_filter=1) is used.
+  #     - net.ipv4.conf.all.src_valid_mark=1
+  #     # May as well disable ipv6. Should be blocked anyway.
+  #     - net.ipv6.conf.default.disable_ipv6=1
   #     - net.ipv6.conf.all.disable_ipv6=1
-  #   volumes:
-  #     - gluetun_data:/gluetun
-  #   environment:
-  #     # See https:\github.com/qdm12/gluetun/wiki
-  #     - VPN_SERVICE_PROVIDER=private internet access
-  #     - OPENVPN_USER=${openvpn_username}
-  #     - OPENVPN_PASSWORD=${openvpn_password}
-  #     - SERVER_REGIONS=CA Ontario
-  #     - TZ=Chicago/USA
-  #     # - PORT_FORWARD_ONLY=true
-  #     - VPN_PORT_FORWARDING=on
-  #     # - VPN_PORT_FORWARDING_STATUS_FILE=/gluetun/piaportforward.json
+  #     - net.ipv6.conf.lo.disable_ipv6=1
+  #   healthcheck:
+  #     test: ping -c 1 www.google.com || exit 1
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
   #   restart: unless-stopped
-  # flaresolverr:
-  #     image: ghcr.io/flaresolverr/flaresolverr:latest
-  #     container_name: flaresolverr
-  #     environment:
-  #       - LOG_LEVEL=${LOG_LEVEL:-info}
-  #       - LOG_HTML=${LOG_HTML:-false}
-  #       - CAPTCHA_SOLVER=${CAPTCHA_SOLVER:-none}
-  #       - TZ=UTC
-  #       - PORT=31314
-  #       - HOST=127.0.0.1
-  #     network_mode: host
-  #     pull_policy: always
-  #     restart: unless-stopped
 
+
+######### *ARR SERVERS#########################################################
   prowlarr:
     image: lscr.io/linuxserver/prowlarr:latest
     container_name: prowlarr
@@ -207,7 +201,7 @@ services:
       - PGID=1000
       - TZ=Chicago/USA
     volumes:
-      - radarr_data:/config:rw
+      - radarr_data:/config
       - ${movies}:/movies
       - ${kids_movies}:/kids_movies
       - ${qbittorrent_downloads}:/downloads
@@ -302,75 +296,65 @@ services:
     depends_on:
       - vpn
 
-  audiobookshelf:
-    image: ghcr.io/advplyr/audiobookshelf:latest
-    ports:
-      - 13378:80
-    volumes:
-      - ${audiobooks}:/audiobooks
-      - ${podcasts}:/podcasts
-      - audiobookshelf_data:/config
-      - audiobookshelf_data:/metadata
-    environment:
-      - TZ=Chicago/USA
-    restart: unless-stopped
-
-  # podgrab:
-  #   image: akhilrex/podgrab
-  #   container_name: podgrab
-  #   environment:
-  #     - CHECK_FREQUENCY=240
-  #    # - PASSWORD=password     ## Uncomment to enable basic authentication, username = podgrab
-  #   volumes:
-  #     - podgrab_data:/config
-  #     - ${podcasts}:/assets
+########## AUDIOBOOKSHELF######################################################
+  # audiobookshelf:
+  #   image: ghcr.io/advplyr/audiobookshelf:latest
   #   ports:
-  #     - 8082:8080
+  #     - 13378:80
+  #   volumes:
+  #     - ${audiobooks}:/audiobooks
+  #     - ${podcasts}:/podcasts
+  #     - audiobookshelf_data:/config
+  #     - audiobookshelf_data:/metadata
+  #   environment:
+  #     - TZ=Chicago/USA
   #   restart: unless-stopped
 
-  immich:
-    container_name: immich
+#########IMMICH SERVER  #######################################################
+  immich-server:
+    container_name: immich_server
     image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-release}
-    # extends:
-    #   file: hwaccel.transcoding.yml
-    #   service: quicksync # set to one of [nvenc, quicksync, rkmpp, vaapi, vaapi-wsl] for accelerated transcoding
+    extends:
+      file: hwaccel.transcoding.yml
+      service: nvenc # set to one of [nvenc, quicksync, rkmpp, vaapi, vaapi-wsl] for accelerated transcoding
     volumes:
+      # Do not edit the next line. If you want to change the media storage location on your system, edit the value of UPLOAD_LOCATION in the .env file
       - ${UPLOAD_LOCATION}:/usr/src/app/upload
       - /etc/localtime:/etc/localtime:ro
     env_file:
       - .env
-    # environment:
-    #   - NVIDIA_VISIBLE_DEVICES=all
     ports:
-      - 2283:3001
+      - 2283:2283
     depends_on:
       - redis
       - database
     restart: always
+    healthcheck:
+      disable: false
 
   immich-machine-learning:
     container_name: immich_machine_learning
     # For hardware acceleration, add one of -[armnn, cuda, openvino] to the image tag.
     # Example tag: ${IMMICH_VERSION:-release}-cuda
-    image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION:-release}
-    # extends: # uncomment this section for hardware acceleration - see https://immich.app/docs/features/ml-hardware-acceleration
-    #   file: hwaccel.ml.yml
-    #   service: openvino # set to one of [armnn, cuda, openvino, openvino-wsl] for accelerated inference - use the `-wsl` version for WSL2 where applicable
-    # environment:
-    #   - NVIDIA_VISIBLE_DEVICES=all
-    ports:
-      - 3003:3003
+    image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION:-release}-cuda
+    extends: # uncomment this section for hardware acceleration - see https://immich.app/docs/features/ml-hardware-acceleration
+      file: hwaccel.ml.yml
+      service: cuda # set to one of [armnn, cuda, openvino, openvino-wsl] for accelerated inference - use the `-wsl` version for WSL2 where applicable
     volumes:
       - model-cache:/cache
     env_file:
       - .env
     restart: always
+    healthcheck:
+      disable: false
 
   redis:
     container_name: immich_redis
-    image: docker.io/redis:6.2-alpine@sha256:d6c2911ac51b289db208767581a5d154544f2b2fe4914ea5056443f62dc6e900
+    image: docker.io/redis:6.2-alpine@sha256:2d1463258f2764328496376f5d965f20c6a67f66ea2b06dc42af351f75248792
     healthcheck:
       test: redis-cli ping || exit 1
+    volumes:
+      - reddis_data:/data
     restart: always
 
   database:
@@ -382,44 +366,33 @@ services:
       POSTGRES_DB: ${DB_DATABASE_NAME}
       POSTGRES_INITDB_ARGS: '--data-checksums'
     volumes:
+      # Do not edit the next line. If you want to change the database storage location on your system, edit the value of DB_DATA_LOCATION in the .env file
       - ${DB_DATA_LOCATION}:/var/lib/postgresql/data
     healthcheck:
-      test: pg_isready --dbname='${DB_DATABASE_NAME}' || exit 1; Chksum="$$(psql --dbname='${DB_DATABASE_NAME}' --username='${DB_USERNAME}' --tuples-only --no-align --command='SELECT COALESCE(SUM(checksum_failures), 0) FROM pg_stat_database')"; echo "checksum failure count is $$Chksum"; [ "$$Chksum" = '0' ] || exit 1
+      test: pg_isready --dbname='${DB_DATABASE_NAME}' --username='${DB_USERNAME}' || exit 1; Chksum="$$(psql --dbname='${DB_DATABASE_NAME}' --username='${DB_USERNAME}' --tuples-only --no-align --command='SELECT COALESCE(SUM(checksum_failures), 0) FROM pg_stat_database')"; echo "checksum failure count is $$Chksum"; [ "$$Chksum" = '0' ] || exit 1
       interval: 5m
       start_interval: 30s
       start_period: 5m
-    command: ["postgres", "-c" ,"shared_preload_libraries=vectors.so", "-c", 'search_path="$$user", public, vectors', "-c", "logging_collector=on", "-c", "max_wal_size=2GB", "-c", "shared_buffers=512MB", "-c", "wal_compression=on"]
+    command: ["postgres", "-c", "shared_preload_libraries=vectors.so", "-c", 'search_path="$$user", public, vectors', "-c", "logging_collector=on", "-c", "max_wal_size=2GB", "-c", "shared_buffers=512MB", "-c", "wal_compression=on"]
     restart: always
-
-  homeassistant:
-    container_name: homeassistant
-    image: "ghcr.io/home-assistant/home-assistant:stable"
-    volumes:
-      - homeassistant_data:/config
-      - /etc/localtime:/etc/localtime:ro
-      - /run/dbus:/run/dbus:ro
-    restart: unless-stopped
-    privileged: true
-    network_mode: host
 
 volumes:
   nginx_data:
   letsencrypt:
   derbynet_data:
-  gluetun_data:
   prowlarr_data:
   radarr_data:
   sonarr_data:
   qbittorrent_data:
   lidarr_data:
   readarr_data:
-  audiobookshelf_data:
+  # audiobookshelf_data:
   model-cache:
-  jellyfin_data:
-  jellyfin_cache:
-  plex_data:
   vpn_data:
   bazarr_data:
-  homeassistant_data:
-  podgrab_data:
-  # model-cache1:
+  gluetun_data:
+  # podgrab_data:
+  jellyfin_data:
+  jellyfin_cache:
+  reddis_data:
+  # plex_data:
