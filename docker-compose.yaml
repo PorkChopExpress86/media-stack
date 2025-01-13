@@ -18,13 +18,13 @@ services:
 
   derbynet:
     container_name: derbynet
-    image: jeffpiazza/derbynet_server
+    image: jeffpiazza/derbynet_server:v10.0
     ports:
       # - 127.0.0.1:8050:80
-      - 8050:8050
+      - 8050:80
     #   - 8051:443
     volumes:
-      - derbynet_data:/var/lib/derbynet
+      - ./derbynet_data:/var/lib/derbynet
       - /etc/localtime:/etc/localtime:ro
       # edit passwords on host system `sudo vim /var/lib/docker/volumes/faraday_derbyet_data/_data/config-roles.inc`
     restart: unless-stopped
@@ -242,22 +242,22 @@ services:
     depends_on:
       - vpn
 
-  readarr:
-    image: lscr.io/linuxserver/readarr:develop
-    container_name: readarr
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Chicago/USA
-    volumes:
-      - readarr_data:/config
-      - ${books}:/books #optional
-      - ${audiobooks}:/audiobooks
-      - ${qbittorrent_downloads}:/downloads #optional
-    restart: unless-stopped
-    network_mode: "service:vpn"
-    depends_on:
-      - vpn
+  # readarr:
+  #   image: lscr.io/linuxserver/readarr:develop
+  #   container_name: readarr
+  #   environment:
+  #     - PUID=1000
+  #     - PGID=1000
+  #     - TZ=Chicago/USA
+  #   volumes:
+  #     - readarr_data:/config
+  #     - ${books}:/books #optional
+  #     - ${audiobooks}:/audiobooks
+  #     - ${qbittorrent_downloads}:/downloads #optional
+  #   restart: unless-stopped
+  #   network_mode: "service:vpn"
+  #   depends_on:
+  #     - vpn
   
   bazarr:
     image: lscr.io/linuxserver/bazarr:latest
@@ -375,10 +375,32 @@ services:
     command: ["postgres", "-c", "shared_preload_libraries=vectors.so", "-c", 'search_path="$$user", public, vectors', "-c", "logging_collector=on", "-c", "max_wal_size=2GB", "-c", "shared_buffers=512MB", "-c", "wal_compression=on"]
     restart: always
 
+  actual_server:
+    image: docker.io/actualbudget/actual-server:latest
+    ports:
+      # This line makes Actual available at port 5006 of the device you run the server on,
+      # i.e. http://localhost:5006. You can change the first number to change the port, if you want.
+      - '5006:5006'
+    # environment:
+      # Uncomment any of the lines below to set configuration options.
+      # - ACTUAL_HTTPS_KEY=/data/selfhost.key
+      # - ACTUAL_HTTPS_CERT=/data/selfhost.crt
+      # - ACTUAL_PORT=5006
+      # - ACTUAL_UPLOAD_FILE_SYNC_SIZE_LIMIT_MB=20
+      # - ACTUAL_UPLOAD_SYNC_ENCRYPTED_FILE_SYNC_SIZE_LIMIT_MB=50
+      # - ACTUAL_UPLOAD_FILE_SIZE_LIMIT_MB=20
+      # See all options and more details at https://actualbudget.github.io/docs/Installing/Configuration
+      # !! If you are not using any of these options, remove the 'environment:' tag entirely.
+    volumes:
+      # Change './actual-data' below to the path to the folder you want Actual to store its data in on your server.
+      # '/data' is the path Actual will look for its files in by default, so leave that as-is.
+      - ./budget_data:/data
+    restart: unless-stopped
+
 volumes:
   nginx_data:
   letsencrypt:
-  derbynet_data:
+  # derbynet_data:
   prowlarr_data:
   radarr_data:
   sonarr_data:
