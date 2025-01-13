@@ -5,3 +5,5 @@ pia-shared/
 scripts/backup/
 immich
 pinchflat
+derbynet_data/
+budget_data/
