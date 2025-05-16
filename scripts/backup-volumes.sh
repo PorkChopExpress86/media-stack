@@ -1,16 +1,16 @@
 #!/bin/bash
 
-# Change to the docker folder # Up[date the path before doing this
-cd /mnt/Samsung860/Docker/Faraday/docker-compose.yaml
+# Change to the docker folder # Update the path before doing this
+# cd /mnt/Samsung860/Docker/Faraday/docker-compose.yaml
 
 # pull down any updates for each of the containers
-docker compose pull
+# docker compose pull
 
-# start up the containers
-docker compose up -d
+# # start up the containers
+# docker compose up -d
 
 # stop to containers, do not down them so there is still access to the volumes
-docker compose stop
+# docker compose stop
 
 # nginx
 docker run --rm --volumes-from nginx -v ./backup:/backup ubuntu tar cvf /backup/nginx_data.tar -C /data .
@@ -30,7 +30,7 @@ docker run --rm --volumes-from plex -v ./backup:/backup ubuntu tar cvf ./backup/
 docker run --rm --volumes-from vpn -v ./backup:/backup ubuntu tar cvf /backup/vpn_data.tar -C /pia .
 
 # # gluetun
-# docker run --rm --volumes-from vpn -v ./backup:/backup ubuntu tar cvf /backup/gluetun_data.tar -C /gluetun .
+docker run --rm --volumes-from vpn -v ./backup:/backup ubuntu tar cvf /backup/gluetun_data.tar -C /gluetun .
 
 # Prowlarr
 docker run --rm --volumes-from prowlarr -v ./backup:/backup ubuntu tar cvf /backup/prowlarr_data.tar -C /config .
@@ -60,4 +60,4 @@ docker run --rm --volumes-from sonarr -v ./backup:/backup ubuntu tar cvf /backup
 docker run --rm --volumes-from immich_machine_learning -v ./backup:/backup ubuntu tar cvf /backup/model-cache.tar -C /cache .
 
 # Start it all back up using the powershell script
-docker compose up -d
+# docker compose up -d
