@@ -1,10 +1,10 @@
 
 function Update-Compose{
     Set-Location -Path "C:\Users\Blake\OneDrive\Desktop\Docker"
-    docker compose pull; docker compose down; docker compose up -d
+    docker compose pull; docker compose down; docker compose up -d; docker image prune -af
 }
 
-function Log-Run {
+function Run-Log {
     $logFilePath = "C:\Users\Blake\OneDrive\Desktop\Docker\file.log"
     if(!(Test-Path $logFilePath)) {
         New-Item -ItemType File -Path $logFilePath
@@ -13,6 +13,6 @@ function Log-Run {
     Add-Content -Path $logFilePath -Value "$timestamp - Update Compose has been run."
 }
 
-Log-Run
+Run-Log
 Update-Compose
 
