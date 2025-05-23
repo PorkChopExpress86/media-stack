@@ -118,22 +118,6 @@ services:
     network_mode: "service:vpn"
     depends_on:
       - vpn
-
-  lidarr:
-    image: lscr.io/linuxserver/lidarr:latest
-    container_name: lidarr
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Chicago/USA
-    volumes:
-      - lidarr_data:/config
-      - ${music}:/music
-      - ${qbittorrent_downloads}:/downloads
-    restart: unless-stopped
-    network_mode: "service:vpn"
-    depends_on:
-      - vpn
   
   bazarr:
     image: lscr.io/linuxserver/bazarr:latest
@@ -271,37 +255,6 @@ services:
       - ./budget_data:/data
     restart: unless-stopped
 
-  nextcloud-db:
-    image: mariadb:10.11
-    container_name: nextcloud-db
-    restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
-      MYSQL_PASSWORD: ${NEXTCLOUD_PASSWORD}
-      MYSQL_DATABASE: nextcloud
-      MYSQL_USER: nextcloud
-    volumes:
-      - nextcloud-db:/var/lib/mysql
-
-  nextcloud:
-    image: nextcloud:latest
-    container_name: nextcloud
-    restart: unless-stopped
-    ports:
-      - 8082:80
-    environment:
-      MYSQL_HOST: nextcloud-db
-      MYSQL_PASSWORD: ${NEXTCLOUD_PASSWORD}
-      MYSQL_DATABASE: nextcloud
-      MYSQL_USER: nextcloud
-      NEXTCLOUD_TRUSTED_DOMAINS: nextcloud.ohmygoshwhatever.com
-      TRUSTED_PROXIES: 172.16.0.0/12
-    depends_on:
-      - nextcloud-db
-    volumes:
-      - nextcloud-html:/var/www/html
-      - ./next_cloud_data:/var/www/html/data
-
 volumes:
   nginx_data:
   letsencrypt:
@@ -309,13 +262,9 @@ volumes:
   radarr_data:
   sonarr_data:
   qbittorrent_data:
-  lidarr_data:
-  readarr_data:
   audiobookshelf_data:
   model-cache:
   vpn_data:
   bazarr_data:
   gluetun_data:
   reddis_data:
-  nextcloud-db:
-  nextcloud-html:
