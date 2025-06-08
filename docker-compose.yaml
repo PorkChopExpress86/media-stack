@@ -255,6 +255,35 @@ services:
       - ./budget_data:/data
     restart: unless-stopped
 
+  pinchflat:
+    image: ghcr.io/kieraneglin/pinchflat:latest
+    container_name: pinchflat
+    environment:
+      # Set the timezone to your local timezone
+      - TZ=America/Chicago
+    ports:
+      - '8945:8945'
+    volumes:
+      - pinchflat_data:/config
+      - "${pinchflat_downloads}:/downloads"
+    restart: unless-stopped
+  
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_NOTIFICATION_EMAIL_FROM=${email}
+      - WATCHTOWER_NOTIFICATION_EMAIL_TO=${email}
+      - WATCHTOWER_NOTIFICATION_EMAIL_SERVER=smtp.gmail.com
+      - WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PORT=587
+      - WATCHTOWER_NOTIFICATION_EMAIL_SERVER_USER=${email}
+      - WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PASSWORD=${gmail_app_passwd}
+      - WATCHTOWER_NOTIFICATION_EMAIL_DELAY=2
+    command: --cleanup --interval 21600
+
 volumes:
   nginx_data:
   letsencrypt:
@@ -268,3 +297,4 @@ volumes:
   bazarr_data:
   gluetun_data:
   reddis_data:
+  pinchflat_data:
