@@ -1,18 +1,51 @@
+function Update-Compose {
+    Set-Location -Path "C:\\Users\\Blake\\Docker\\MediaServer"
 
-function Update-Compose{
-    Set-Location -Path "C:\Users\Blake\OneDrive\Desktop\Docker"
-    docker compose pull; docker compose down; docker compose up -d; docker image prune -af
+    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $logFilePath = "C:\\Users\\Blake\\Docker\\MediaServer\\file.log"
+    $pullOutput = docker compose pull 2>&1
+
+    Write-Host "$timestamp - Pulling latest images..." -ForegroundColor Cyan
+    $pullOutput | ForEach-Object {
+        Write-Host $_
+        Add-Content -Path $logFilePath -Value $_
+    }
+
+    Add-Content -Path $logFilePath -Value "$timestamp - Docker compose pull completed."
+
+    # Extract updated services
+    $updated = $pullOutput | Where-Object {
+        $_ -match "Downloaded newer image|Pull complete|Status: Downloaded"
+    }
+
+    if ($updated.Count -gt 0) {
+        Write-Host "`n$timestamp - New images detected for the following containers:" -ForegroundColor Green
+        Add-Content -Path $logFilePath -Value "$timestamp - New images pulled:"
+        foreach ($line in $updated) {
+            Write-Host "  → $line" -ForegroundColor Yellow
+            Add-Content -Path $logFilePath -Value "  → $line"
+        }
+
+        Write-Host "`nRestarting containers..." -ForegroundColor Cyan
+        Add-Content -Path $logFilePath -Value "$timestamp - Restarting containers."
+        docker compose down
+        docker compose up -d
+        docker image prune -af
+    } else {
+        Write-Host "`n$timestamp - No new images found. Skipping container restart." -ForegroundColor Gray
+        Add-Content -Path $logFilePath -Value "$timestamp - No new images. Containers not restarted."
+    }
 }
 
 function Run-Log {
-    $logFilePath = "C:\Users\Blake\OneDrive\Desktop\Docker\file.log"
-    if(!(Test-Path $logFilePath)) {
+    $logFilePath = "C:\\Users\\Blake\\Docker\\MediaServer\\file.log"
+    if (!(Test-Path $logFilePath)) {
         New-Item -ItemType File -Path $logFilePath
     }
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    Add-Content -Path $logFilePath -Value "$timestamp - Update Compose has been run."
+    Write-Host "$timestamp - Starting update check..." -ForegroundColor Cyan
+    Add-Content -Path $logFilePath -Value "$timestamp - Starting update check."
 }
 
 Run-Log
 Update-Compose
-
