@@ -47,12 +47,14 @@ services:
       - 9696:9696
       # Lidarr
       - 8686:8686
-      # Bazarr
-      - 6767:6767
+      # # Bazarr
+      # - 6767:6767
       # Qbittorrent
       - 8080:8080
       - 6881:6881
       - 6881:6881/udp
+      - 40025:40025
+      - 40025:40025/udp
     sysctls:
       - net.ipv6.conf.all.disable_ipv6=1
     volumes:
@@ -125,7 +127,10 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=Etc/UTC
+      - TZ=Chicago/USA
+    ports:
+      # Bazarr
+      - 6767:6767
     volumes:
       - bazarr_data:/config
       - ${movies}:/movies
@@ -133,9 +138,9 @@ services:
       - ${kids_movies}:/kid_movies
       - ${kids_tv_shows}:/kid_tv_shows
     restart: unless-stopped
-    network_mode: "service:vpn"
-    depends_on:
-      - vpn
+    # network_mode: "service:vpn"
+    # depends_on:
+    #   - vpn
 
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent:latest
