@@ -1,3 +1,5 @@
+# Ignore backup volume archives
+vol_bkup/
 .env
 .env.linux
 backup/
