@@ -45,6 +45,7 @@ services:
       - 8787:8787
       # Prowlarr
       - 9696:9696
+      - 1080:1080/tcp # SOCKS5 proxy
       # Lidarr
       - 8686:8686
       # # Bazarr
@@ -97,6 +98,7 @@ services:
     volumes:
       - radarr_data:/config
       - ${movies}:/movies
+      - ${other_movies}:/other_movies
       - ${kids_movies}:/kids_movies
       - ${qbittorrent_downloads}:/downloads
     restart: unless-stopped
@@ -115,6 +117,7 @@ services:
       - sonarr_data:/config
       - ${tv_shows}:/tv_shows
       - ${kids_tv_shows}:/kids_tv_shows
+      - ${other_shows}:/other_shows
       - ${qbittorrent_downloads}:/downloads
     restart: unless-stopped
     network_mode: "service:vpn"
@@ -138,9 +141,9 @@ services:
       - ${kids_movies}:/kid_movies
       - ${kids_tv_shows}:/kid_tv_shows
     restart: unless-stopped
-    # network_mode: "service:vpn"
-    # depends_on:
-    #   - vpn
+    network_mode: "service:vpn"
+    depends_on:
+      - vpn
 
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent:latest
