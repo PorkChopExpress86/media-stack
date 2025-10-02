@@ -49,7 +49,7 @@ services:
       # Lidarr
       - 8686:8686
       # # Bazarr
-      # - 6767:6767
+      - 6767:6767
       # Qbittorrent
       - 8080:8080
       - 6881:6881
@@ -131,9 +131,9 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=Chicago/USA
-    ports:
+    # ports:
       # Bazarr
-      - 6767:6767
+      # - 6767:6767
     volumes:
       - bazarr_data:/config
       - ${movies}:/movies
