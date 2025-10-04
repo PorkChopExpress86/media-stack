@@ -1,5 +1,6 @@
 # Ignore backup volume archives
 vol_bkup/
+!vol_bkup/.gitkeep
 .env
 .env.linux
 backup/
