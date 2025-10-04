@@ -267,13 +267,23 @@ services:
     image: ghcr.io/kieraneglin/pinchflat:latest
     container_name: pinchflat
     environment:
-      # Set the timezone to your local timezone
       - TZ=America/Chicago
     ports:
       - '8945:8945'
     volumes:
       - pinchflat_data:/config
       - "${pinchflat_downloads}:/downloads"
+    restart: unless-stopped
+  
+  focalboard:
+    image: mattermost/focalboard:latest
+    container_name: focalboard
+    ports:
+      - '8046:8000'
+    environment:
+      - TZ=America/Chicago
+    volumes:
+      - focalboard_data:/opt/focalboard/data
     restart: unless-stopped
   
   watchtower:
@@ -306,3 +316,4 @@ volumes:
   gluetun_data:
   reddis_data:
   pinchflat_data:
+  focalboard_data:
