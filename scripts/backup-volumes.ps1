@@ -153,6 +153,48 @@ function Get-ComposeVolumes($composePath) {
     return $vols | Select-Object -Unique
 }
 
+function Get-ActualVolumeName {
+    param([string]$ComposeName)
+    
+    # Docker Compose prefixes volume names with the project name (directory name by default)
+    # Try to find the actual volume name by checking what exists
+    $allVolumes = docker volume ls --format "{{.Name}}" 2>$null
+    
+    # FIRST: Try to get project name and check for prefixed version
+    # This is most likely the version actually in use by running containers
+    try {
+        $projectName = (Get-Item (Split-Path -Parent $PSScriptRoot)).Name.ToLower() -replace '[^a-z0-9_-]', ''
+        $withProject = "${projectName}_${ComposeName}"
+        $exists = $allVolumes | Where-Object { $_ -eq $withProject }
+        if ($exists) { 
+            return $withProject 
+        }
+    }
+    catch { }
+    
+    # SECOND: Look for any prefixed version (e.g., mediaserver_nginx_data)
+    $prefixed = $allVolumes | Where-Object { $_ -like "*_$ComposeName" }
+    if ($prefixed) { 
+        # If multiple matches, prefer ones that look like project prefixes
+        if ($prefixed -is [array]) { 
+            # Sort by length (shorter is likely the right one) and take first
+            $prefixed = $prefixed | Sort-Object Length | Select-Object -First 1
+        }
+        return $prefixed
+    }
+    
+    # THIRD: Look for exact match (might be an old/empty volume)
+    $exact = $allVolumes | Where-Object { $_ -eq $ComposeName }
+    if ($exact) { 
+        Write-Warning "Found unprefixed volume '$ComposeName' - this may be empty. Consider using prefixed version."
+        return $ComposeName 
+    }
+    
+    # Return original name as fallback
+    Write-Warning "Could not find actual volume for '$ComposeName', will attempt to use as-is"
+    return $ComposeName
+}
+
 if ($ComposeVolumes) {
     # Default compose file path in repo root
     $composeFile = Join-Path -Path $PSScriptRoot -ChildPath "..\docker-compose.yaml"
@@ -162,14 +204,17 @@ if ($ComposeVolumes) {
         Write-Warning "No named volumes found in docker-compose.yaml at $composeFile"
     }
     else {
-        Write-Host "Backing up named volumes from docker-compose.yaml: $($composeVolumeNames -join ', ')"
-        # Replace backups list with volumes from compose
+        Write-Host "Resolving actual volume names from docker-compose.yaml volumes: $($composeVolumeNames -join ', ')"
+        # Replace backups list with volumes from compose, resolving to actual volume names
         $backups = @()
         foreach ($v in $composeVolumeNames) {
-            $archive = "${v}.tar.gz"
+            $actualVolume = Get-ActualVolumeName -ComposeName $v
+            $archive = "${actualVolume}.tar.gz"
+            Write-Host "  $v -> $actualVolume" -ForegroundColor Gray
             # mark these entries as volume-backed so the main loop uses -v <volume>:/data
-            $backups += @{ container = ''; archive = $archive; src = '/data'; volume = $v }
+            $backups += @{ container = ''; archive = $archive; src = '/data'; volume = $actualVolume }
         }
+        Write-Host ""
     }
 }
 
