@@ -2,7 +2,7 @@ services:
   nginx:
     container_name: nginx
     image: 'jc21/nginx-proxy-manager:latest'
-    restart: unless-stopped
+    restart: always
     ports:
       # These ports are in format <host-port>:<container-port>
       - '80:80' # Public HTTP Port
@@ -23,7 +23,7 @@ services:
       - ./derbynet_data:/var/lib/derbynet
       - /etc/localtime:/etc/localtime:ro
       # edit passwords on host system `sudo vim /var/lib/docker/volumes/faraday_derbyet_data/_data/config-roles.inc`
-    restart: unless-stopped
+    restart: always
 
   vpn:
     image: qmcgaw/gluetun:latest
@@ -71,7 +71,7 @@ services:
       # - PORT_FORWARD_ONLY=true
       - VPN_PORT_FORWARDING=on
       # - VPN_PORT_FORWARDING_STATUS_FILE=/gluetun/piaportforward.json
-    restart: unless-stopped
+    restart: always
 
 ######### *ARR SERVERS#########################################################
   prowlarr:
@@ -83,7 +83,7 @@ services:
       - TZ=Chicago/USA
     volumes:
       - prowlarr_data:/config
-    restart: unless-stopped
+    restart: always
     network_mode: "service:vpn"
     depends_on:
       - vpn
@@ -101,7 +101,7 @@ services:
       - ${other_movies}:/other_movies
       - ${kids_movies}:/kids_movies
       - ${qbittorrent_downloads}:/downloads
-    restart: unless-stopped
+    restart: always
     network_mode: "service:vpn"
     depends_on:
       - vpn
@@ -119,7 +119,7 @@ services:
       - ${kids_tv_shows}:/kids_tv_shows
       - ${other_shows}:/other_shows
       - ${qbittorrent_downloads}:/downloads
-    restart: unless-stopped
+    restart: always
     network_mode: "service:vpn"
     depends_on:
       - vpn
@@ -140,7 +140,7 @@ services:
       - ${tv_shows}:/tv_shows 
       - ${kids_movies}:/kid_movies
       - ${kids_tv_shows}:/kid_tv_shows
-    restart: unless-stopped
+    restart: always
     network_mode: "service:vpn"
     depends_on:
       - vpn
@@ -156,7 +156,7 @@ services:
     volumes:
       - qbittorrent_data:/config
       - ${qbittorrent_downloads}:/downloads
-    restart: unless-stopped
+    restart: always
     network_mode: "service:vpn"
     depends_on:
       - vpn
@@ -173,7 +173,7 @@ services:
       - ./audiobookshelf_data:/metadata
     environment:
       - TZ=Chicago/USA
-    restart: unless-stopped
+    restart: always
 
 #########IMMICH SERVER  #######################################################
   immich-server:
@@ -242,6 +242,7 @@ services:
     restart: always
 
   actual_server:
+    container_name: actual_server
     image: docker.io/actualbudget/actual-server:latest
     ports:
       # This line makes Actual available at port 5006 of the device you run the server on,
@@ -261,7 +262,7 @@ services:
       # Change './actual-data' below to the path to the folder you want Actual to store its data in on your server.
       # '/data' is the path Actual will look for its files in by default, so leave that as-is.
       - ./budget_data:/data
-    restart: unless-stopped
+    restart: always
 
   pinchflat:
     image: ghcr.io/kieraneglin/pinchflat:latest
@@ -273,18 +274,18 @@ services:
     volumes:
       - pinchflat_data:/config
       - "${pinchflat_downloads}:/downloads"
-    restart: unless-stopped
+    restart: always
   
-  focalboard:
-    image: mattermost/focalboard:latest
-    container_name: focalboard
-    ports:
-      - '8046:8000'
-    environment:
-      - TZ=America/Chicago
-    volumes:
-      - focalboard_data:/opt/focalboard/data
-    restart: unless-stopped
+  # focalboard:
+  #   image: mattermost/focalboard:latest
+  #   container_name: focalboard
+  #   ports:
+  #     - '8046:8000'
+  #   environment:
+  #     - TZ=America/Chicago
+  #   volumes:
+  #     - focalboard_data:/opt/focalboard/data
+  #   restart: unless-stopped
   
   watchtower:
     image: containrrr/watchtower
@@ -316,4 +317,4 @@ volumes:
   gluetun_data:
   reddis_data:
   pinchflat_data:
-  focalboard_data:
+  # focalboard_data:
