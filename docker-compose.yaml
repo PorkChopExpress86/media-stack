@@ -2,7 +2,7 @@ services:
   nginx:
     container_name: nginx
     image: 'jc21/nginx-proxy-manager:latest'
-    restart: unless-stopped
+    restart: always
     ports:
       # These ports are in format <host-port>:<container-port>
       - '80:80' # Public HTTP Port
@@ -23,7 +23,7 @@ services:
       - ./derbynet_data:/var/lib/derbynet
       - /etc/localtime:/etc/localtime:ro
       # edit passwords on host system `sudo vim /var/lib/docker/volumes/faraday_derbyet_data/_data/config-roles.inc`
-    restart: unless-stopped
+    restart: always
 
   vpn:
     image: qmcgaw/gluetun:latest
@@ -49,7 +49,7 @@ services:
       # Lidarr
       - 8686:8686
       # # Bazarr
-      # - 6767:6767
+      - 6767:6767
       # Qbittorrent
       - 8080:8080
       - 6881:6881
@@ -67,11 +67,11 @@ services:
       - OPENVPN_PASSWORD=${vpn_password}
       # - SERVER_REGIONS=Netherlands
       - SERVER_REGIONS=CA Toronto
-      - TZ=Chicago/USA
+      - TZ=${TZ:-America/Chicago}
       # - PORT_FORWARD_ONLY=true
       - VPN_PORT_FORWARDING=on
       # - VPN_PORT_FORWARDING_STATUS_FILE=/gluetun/piaportforward.json
-    restart: unless-stopped
+    restart: always
 
 ######### *ARR SERVERS#########################################################
   prowlarr:
@@ -80,10 +80,10 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=Chicago/USA
+      - TZ=${TZ:-America/Chicago}
     volumes:
       - prowlarr_data:/config
-    restart: unless-stopped
+    restart: always
     network_mode: "service:vpn"
     depends_on:
       - vpn
@@ -94,14 +94,14 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=Chicago/USA
+      - TZ=${TZ:-America/Chicago}
     volumes:
       - radarr_data:/config
       - ${movies}:/movies
       - ${other_movies}:/other_movies
       - ${kids_movies}:/kids_movies
       - ${qbittorrent_downloads}:/downloads
-    restart: unless-stopped
+    restart: always
     network_mode: "service:vpn"
     depends_on:
       - vpn
@@ -112,14 +112,14 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=Chicago/USA
+      - TZ=${TZ:-America/Chicago}
     volumes:
       - sonarr_data:/config
       - ${tv_shows}:/tv_shows
       - ${kids_tv_shows}:/kids_tv_shows
       - ${other_shows}:/other_shows
       - ${qbittorrent_downloads}:/downloads
-    restart: unless-stopped
+    restart: always
     network_mode: "service:vpn"
     depends_on:
       - vpn
@@ -130,17 +130,17 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=Chicago/USA
-    ports:
+      - TZ=${TZ:-America/Chicago}
+    # ports:
       # Bazarr
-      - 6767:6767
+      # - 6767:6767
     volumes:
       - bazarr_data:/config
       - ${movies}:/movies
       - ${tv_shows}:/tv_shows 
-      - ${kids_movies}:/kid_movies
-      - ${kids_tv_shows}:/kid_tv_shows
-    restart: unless-stopped
+      - ${kids_movies}:/kids_movies
+      - ${kids_tv_shows}:/kids_tv_shows
+    restart: always
     network_mode: "service:vpn"
     depends_on:
       - vpn
@@ -151,12 +151,12 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=Chicago/USA
+      - TZ=${TZ:-America/Chicago}
       - WEBUI_PORT=8080
     volumes:
       - qbittorrent_data:/config
       - ${qbittorrent_downloads}:/downloads
-    restart: unless-stopped
+    restart: always
     network_mode: "service:vpn"
     depends_on:
       - vpn
@@ -172,8 +172,8 @@ services:
       - ./audiobookshelf_data:/config
       - ./audiobookshelf_data:/metadata
     environment:
-      - TZ=Chicago/USA
-    restart: unless-stopped
+      - TZ=${TZ:-America/Chicago}
+    restart: always
 
 #########IMMICH SERVER  #######################################################
   immich-server:
@@ -242,6 +242,7 @@ services:
     restart: always
 
   actual_server:
+    container_name: actual_server
     image: docker.io/actualbudget/actual-server:latest
     ports:
       # This line makes Actual available at port 5006 of the device you run the server on,
@@ -261,23 +262,22 @@ services:
       # Change './actual-data' below to the path to the folder you want Actual to store its data in on your server.
       # '/data' is the path Actual will look for its files in by default, so leave that as-is.
       - ./budget_data:/data
-    restart: unless-stopped
+    restart: always
 
   pinchflat:
     image: ghcr.io/kieraneglin/pinchflat:latest
     container_name: pinchflat
     environment:
-      # Set the timezone to your local timezone
       - TZ=America/Chicago
     ports:
       - '8945:8945'
     volumes:
       - pinchflat_data:/config
       - "${pinchflat_downloads}:/downloads"
-    restart: unless-stopped
+    restart: always
   
   watchtower:
-    image: containrrr/watchtower
+    image: containrrr/watchtower:1.7.1
     container_name: watchtower
     restart: always
     volumes:
@@ -290,6 +290,7 @@ services:
       - WATCHTOWER_NOTIFICATION_EMAIL_SERVER_USER=${email}
       - WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PASSWORD=${gmail_app_passwd}
       - WATCHTOWER_NOTIFICATION_EMAIL_DELAY=2
+      - DOCKER_API_VERSION=1.52
     command: --cleanup --interval 21600
 
 volumes:
@@ -306,3 +307,5 @@ volumes:
   gluetun_data:
   reddis_data:
   pinchflat_data:
+  watchtower_data:
+
