@@ -138,8 +138,8 @@ services:
       - bazarr_data:/config
       - ${movies}:/movies
       - ${tv_shows}:/tv_shows 
-      - ${kids_movies}:/kid_movies
-      - ${kids_tv_shows}:/kid_tv_shows
+      - ${kids_movies}:/kids_movies
+      - ${kids_tv_shows}:/kids_tv_shows
     restart: always
     network_mode: "service:vpn"
     depends_on:
