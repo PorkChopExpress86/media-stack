@@ -1,8 +1,8 @@
 function Update-Compose {
-    Set-Location -Path "C:\\Users\\Blake\\Docker\\MediaServer"
+    Set-Location -Path $PSScriptRoot
 
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    $logFilePath = "C:\\Users\\Blake\\Docker\\MediaServer\\file.log"
+    $logFilePath = Join-Path -Path $PSScriptRoot -ChildPath "file.log"
     $pullOutput = docker compose pull 2>&1
 
     Write-Host "$timestamp - Pulling latest images..." -ForegroundColor Cyan
@@ -31,14 +31,15 @@ function Update-Compose {
         docker compose down
         docker compose up -d
         docker image prune -af
-    } else {
+    }
+    else {
         Write-Host "`n$timestamp - No new images found. Skipping container restart." -ForegroundColor Gray
         Add-Content -Path $logFilePath -Value "$timestamp - No new images. Containers not restarted."
     }
 }
 
-function Run-Log {
-    $logFilePath = "C:\\Users\\Blake\\Docker\\MediaServer\\file.log"
+function Initialize-Log {
+    $logFilePath = Join-Path -Path $PSScriptRoot -ChildPath "file.log"
     if (!(Test-Path $logFilePath)) {
         New-Item -ItemType File -Path $logFilePath
     }
@@ -47,5 +48,5 @@ function Run-Log {
     Add-Content -Path $logFilePath -Value "$timestamp - Starting update check."
 }
 
-Run-Log
+Initialize-Log
 Update-Compose
