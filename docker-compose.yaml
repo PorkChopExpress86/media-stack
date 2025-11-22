@@ -67,7 +67,7 @@ services:
       - OPENVPN_PASSWORD=${vpn_password}
       # - SERVER_REGIONS=Netherlands
       - SERVER_REGIONS=CA Toronto
-      - TZ=Chicago/USA
+      - TZ=${TZ:-America/Chicago}
       # - PORT_FORWARD_ONLY=true
       - VPN_PORT_FORWARDING=on
       # - VPN_PORT_FORWARDING_STATUS_FILE=/gluetun/piaportforward.json
@@ -80,7 +80,7 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=Chicago/USA
+      - TZ=${TZ:-America/Chicago}
     volumes:
       - prowlarr_data:/config
     restart: always
@@ -94,7 +94,7 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=Chicago/USA
+      - TZ=${TZ:-America/Chicago}
     volumes:
       - radarr_data:/config
       - ${movies}:/movies
@@ -112,7 +112,7 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=Chicago/USA
+      - TZ=${TZ:-America/Chicago}
     volumes:
       - sonarr_data:/config
       - ${tv_shows}:/tv_shows
@@ -130,7 +130,7 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=Chicago/USA
+      - TZ=${TZ:-America/Chicago}
     # ports:
       # Bazarr
       # - 6767:6767
@@ -151,7 +151,7 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=Chicago/USA
+      - TZ=${TZ:-America/Chicago}
       - WEBUI_PORT=8080
     volumes:
       - qbittorrent_data:/config
@@ -172,7 +172,7 @@ services:
       - ./audiobookshelf_data:/config
       - ./audiobookshelf_data:/metadata
     environment:
-      - TZ=Chicago/USA
+      - TZ=${TZ:-America/Chicago}
     restart: always
 
 #########IMMICH SERVER  #######################################################
@@ -277,7 +277,7 @@ services:
     restart: always
   
   watchtower:
-    image: containrrr/watchtower
+    image: containrrr/watchtower:1.7.1
     container_name: watchtower
     restart: always
     volumes:
