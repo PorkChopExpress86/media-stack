@@ -1,0 +1,21 @@
+name: Validate Docker Compose
+
+on:
+  pull_request:
+    paths:
+      - 'docker-compose.yaml'
+      - '.github/workflows/**'
+
+jobs:
+  validate-compose:
+    name: Validate docker-compose.yaml
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate docker-compose.yaml
+        # Uses the official docker/compose image to run `docker compose config` without requiring installation
+        run: |
+          docker run --rm -v "${{ github.workspace }}":/workdir -w /workdir docker/compose:2.17.2 config
