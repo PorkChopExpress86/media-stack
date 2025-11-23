@@ -1,0 +1,13 @@
+#!/bin/sh
+# Pre-commit hook: run yamllint for docker-compose.yaml if it's staged
+STAGED=$(git diff --cached --name-only --diff-filter=ACM | grep -E '^docker-compose.yaml$' || true)
+if [ -n "$STAGED" ]; then
+  echo "Running yamllint on docker-compose.yaml..."
+  docker run --rm -v "$(pwd):/work" -w /work cytopia/yamllint:latest docker-compose.yaml
+  RC=$?
+  if [ $RC -ne 0 ]; then
+    echo "yamllint failed. Please fix the issues before committing."
+    exit $RC
+  fi
+fi
+exit 0
