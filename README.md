@@ -25,17 +25,27 @@ A comprehensive Docker Compose setup for a home media server with automated back
 - **Sonarr** - TV show management (Port 8989)
 - **Bazarr** - Subtitle management (Port 6767)
 - **qBittorrent** - Torrent client (Port 8080)
+- **Decluttarr** - Queue cleanup (see details below)
 
-## 🧹 Decluttarr (Queue cleanup)
+### Additional Services
+- **Gluetun VPN** - VPN container for *arr services
+- **Immich** - Photo management (Port 2283)
+- **Pinchflat** - YouTube downloader (Port 8945)
+- **Focalboard** - Project management (Port 8046)
+- **Actual Budget** - Budget tracking (Port 5006)
+- **DerbyNet** - Pinewood derby race management (Port 8050)
+- **Watchtower** - Automatic container updates
+
+## Decluttarr (details)
 
 Decluttarr is an automated cleanup tool for the *arr stack that removes stalled,
 failed or slow downloads and optionally triggers re-searches in Radarr/Sonarr.
 
-- Use Decluttarr V2 config (recommended) — the V2 format supports multiple
-   instances and improved settings. You can configure it either via `config.yaml`
-   mounted into the container or directly in `docker-compose.yml` using the V2
-   examples (multiline YAML with `>`).
-- Minimal docker-compose snippet (V2 style):
+Recommended: use Decluttarr V2 config (supports multiple instances and improved
+settings). You can supply settings via a `config.yaml` mounted into the
+container or inline in `docker-compose.yml` using the V2 multiline format.
+
+Minimal inline snippet (V2 style):
 
 ```yaml
 decluttarr:
@@ -53,25 +63,17 @@ decluttarr:
             password: "${QBITTORRENT_PASS}"
 ```
 
-- Important: put API keys and qBit creds in your `.env` (`RADARR_API_KEY`,
-   `SONARR_API_KEY`, `PROWLARR_API_KEY`, `QBITTORRENT_USER`, `QBITTORRENT_PASS`).
-- Check activity and troubleshooting with:
+Put API keys and qBittorrent credentials in your `.env` (`RADARR_API_KEY`,
+`SONARR_API_KEY`, `PROWLARR_API_KEY`, `QBITTORRENT_USER`, `QBITTORRENT_PASS`).
+
+Check activity and troubleshooting with:
 
 ```powershell
 docker logs decluttarr -f
 ```
 
-Notes: If you enable `detect_deletions`, mount the same media paths into
+Note: If you enable `detect_deletions`, mount the same media paths into
 Decluttarr so it can access them; otherwise that job will warn and be skipped.
-
-### Additional Services
-- **Gluetun VPN** - VPN container for *arr services
-- **Immich** - Photo management (Port 2283)
-- **Pinchflat** - YouTube downloader (Port 8945)
-- **Focalboard** - Project management (Port 8046)
-- **Actual Budget** - Budget tracking (Port 5006)
-- **DerbyNet** - Pinewood derby race management (Port 8050)
-- **Watchtower** - Automatic container updates
 
 ## 🔧 Prerequisites
 
