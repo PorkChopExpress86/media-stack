@@ -1,4 +1,4 @@
-# MediaServer Docker Compose
+# media-stack (Media Stack)
 
 A comprehensive Docker Compose setup for a home media server with automated backups, *arr stack, streaming services, and more.
 
@@ -26,6 +26,44 @@ A comprehensive Docker Compose setup for a home media server with automated back
 - **Bazarr** - Subtitle management (Port 6767)
 - **qBittorrent** - Torrent client (Port 8080)
 
+## 🧹 Decluttarr (Queue cleanup)
+
+Decluttarr is an automated cleanup tool for the *arr stack that removes stalled,
+failed or slow downloads and optionally triggers re-searches in Radarr/Sonarr.
+
+- Use Decluttarr V2 config (recommended) — the V2 format supports multiple
+   instances and improved settings. You can configure it either via `config.yaml`
+   mounted into the container or directly in `docker-compose.yml` using the V2
+   examples (multiline YAML with `>`).
+- Minimal docker-compose snippet (V2 style):
+
+```yaml
+decluttarr:
+   image: ghcr.io/manimatter/decluttarr:latest
+   environment:
+      RADARR: >
+         - base_url: "http://vpn:7878"
+            api_key: "${RADARR_API_KEY}"
+      SONARR: >
+         - base_url: "http://vpn:8989"
+            api_key: "${SONARR_API_KEY}"
+      QBITTORRENT: >
+         - base_url: "http://vpn:8080"
+            username: "${QBITTORRENT_USER}"
+            password: "${QBITTORRENT_PASS}"
+```
+
+- Important: put API keys and qBit creds in your `.env` (`RADARR_API_KEY`,
+   `SONARR_API_KEY`, `PROWLARR_API_KEY`, `QBITTORRENT_USER`, `QBITTORRENT_PASS`).
+- Check activity and troubleshooting with:
+
+```powershell
+docker logs decluttarr -f
+```
+
+Notes: If you enable `detect_deletions`, mount the same media paths into
+Decluttarr so it can access them; otherwise that job will warn and be skipped.
+
 ### Additional Services
 - **Gluetun VPN** - VPN container for *arr services
 - **Immich** - Photo management (Port 2283)
@@ -52,8 +90,8 @@ A comprehensive Docker Compose setup for a home media server with automated back
 ### 1. Clone the Repository
 
 ```powershell
-git clone https://github.com/PorkChopExpress86/Faraday.git
-cd Faraday
+git clone https://github.com/PorkChopExpress86/media-stack.git
+cd media-stack
 ```
 
 ### 2. Create Environment File
@@ -167,7 +205,7 @@ Back up all Docker volumes to compressed archives:
 **Example:**
 ```powershell
 # Full backup to custom directory
-.\scripts\backup-volumes.ps1 -BackupDir "D:\MediaServer-Backups"
+.\scripts\backup-volumes.ps1 -BackupDir "D:\media-stack-backups"
 
 # Preview backup operation
 .\scripts\backup-volumes.ps1 -WhatIf
@@ -234,7 +272,7 @@ This script will:
    - Set trigger (e.g., daily at 3 AM)
    - Action: Start a program
    - Program: `powershell.exe`
-   - Arguments: `-File "C:\Users\Blake\Docker\MediaServer\scripts\backup-volumes.ps1"`
+   - Arguments: `-File "C:\Users\Blake\Docker\media-stack\scripts\backup-volumes.ps1"`
 
 3. **Store Backups Off-Site** - Copy `vol_bkup/` to external drive or cloud storage
 
@@ -403,7 +441,7 @@ docker system prune -a --volumes
 ## 📁 Project Structure
 
 ```
-MediaServer/
+media-stack/
 ├── docker-compose.yaml      # Main compose file
 ├── .env                      # Environment variables (not in git)
 ├── .env.example             # Template for .env
