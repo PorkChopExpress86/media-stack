@@ -36,44 +36,7 @@ A comprehensive Docker Compose setup for a home media server with automated back
 - **DerbyNet** - Pinewood derby race management (Port 8050)
 - **Watchtower** - Automatic container updates
 
-## Decluttarr (details)
 
-Decluttarr is an automated cleanup tool for the *arr stack that removes stalled,
-failed or slow downloads and optionally triggers re-searches in Radarr/Sonarr.
-
-Recommended: use Decluttarr V2 config (supports multiple instances and improved
-settings). You can supply settings via a `config.yaml` mounted into the
-container or inline in `docker-compose.yml` using the V2 multiline format.
-
-Minimal inline snippet (V2 style):
-
-```yaml
-decluttarr:
-   image: ghcr.io/manimatter/decluttarr:latest
-   environment:
-      RADARR: >
-         - base_url: "http://vpn:7878"
-            api_key: "${RADARR_API_KEY}"
-      SONARR: >
-         - base_url: "http://vpn:8989"
-            api_key: "${SONARR_API_KEY}"
-      QBITTORRENT: >
-         - base_url: "http://vpn:8080"
-            username: "${QBITTORRENT_USER}"
-            password: "${QBITTORRENT_PASS}"
-```
-
-Put API keys and qBittorrent credentials in your `.env` (`RADARR_API_KEY`,
-`SONARR_API_KEY`, `PROWLARR_API_KEY`, `QBITTORRENT_USER`, `QBITTORRENT_PASS`).
-
-Check activity and troubleshooting with:
-
-```powershell
-docker logs decluttarr -f
-```
-
-Note: If you enable `detect_deletions`, mount the same media paths into
-Decluttarr so it can access them; otherwise that job will warn and be skipped.
 
 ## 🔧 Prerequisites
 
@@ -212,6 +175,45 @@ Notes:
 docker run --rm -v "${PWD}:/work" -w /work cytopia/yamllint:latest docker-compose.yaml
 ```
 
+
+## Decluttarr (details)
+
+Decluttarr is an automated cleanup tool for the *arr stack that removes stalled,
+failed or slow downloads and optionally triggers re-searches in Radarr/Sonarr.
+
+Recommended: use Decluttarr V2 config (supports multiple instances and improved
+settings). You can supply settings via a `config.yaml` mounted into the
+container or inline in `docker-compose.yml` using the V2 multiline format.
+
+Minimal inline snippet (V2 style):
+
+```yaml
+decluttarr:
+   image: ghcr.io/manimatter/decluttarr:latest
+   environment:
+      RADARR: >
+         - base_url: "http://vpn:7878"
+            api_key: "${RADARR_API_KEY}"
+      SONARR: >
+         - base_url: "http://vpn:8989"
+            api_key: "${SONARR_API_KEY}"
+      QBITTORRENT: >
+         - base_url: "http://vpn:8080"
+            username: "${QBITTORRENT_USER}"
+            password: "${QBITTORRENT_PASS}"
+```
+
+Put API keys and qBittorrent credentials in your `.env` (`RADARR_API_KEY`,
+`SONARR_API_KEY`, `PROWLARR_API_KEY`, `QBITTORRENT_USER`, `QBITTORRENT_PASS`).
+
+Check activity and troubleshooting with:
+
+```powershell
+docker logs decluttarr -f
+```
+
+Note: If you enable `detect_deletions`, mount the same media paths into
+Decluttarr so it can access them; otherwise that job will warn and be skipped.
 
 ## 💾 Backup & Restore
 
