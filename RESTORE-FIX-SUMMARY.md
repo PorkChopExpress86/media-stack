@@ -1,6 +1,7 @@
 # Restore Script Enhancement - Volume Name Resolution
 
 **Date:** October 5, 2025  
+**Repository:** media-stack  
 **Script:** restore-volumes.ps1  
 **Status:** ✅ ENHANCED
 

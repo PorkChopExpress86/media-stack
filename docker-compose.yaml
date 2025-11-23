@@ -89,6 +89,47 @@ services:
     depends_on:
       - vpn
 
+  decluttarr:
+    image: ghcr.io/manimatter/decluttarr:latest
+    container_name: decluttarr
+    restart: always
+    environment:
+      TZ: ${TZ:-America/Chicago}
+      PUID: 1000
+      PGID: 1000
+      LOG_LEVEL: INFO
+      TEST_RUN: False
+      TIMER: 60
+      
+      # Jobs
+      REMOVE_FAILED_DOWNLOADS: True
+      REMOVE_FAILED_IMPORTS: True
+      REMOVE_METADATA_MISSING: True
+      REMOVE_ORPHANS: True
+      REMOVE_SLOW: True
+      REMOVE_STALLED: True
+      
+      # Instances
+      RADARR: >
+        - base_url: "http://vpn:7878"
+          api_key: "${RADARR_API_KEY}"
+      
+      SONARR: >
+        - base_url: "http://vpn:8989"
+          api_key: "${SONARR_API_KEY}"
+      
+      PROWLARR: >
+        - base_url: "http://vpn:9696"
+          api_key: "${PROWLARR_API_KEY}"
+      
+      # Download Clients
+      QBITTORRENT: >
+        - base_url: "http://vpn:8080"
+          username: "${QBITTORRENT_USER}"
+          password: "${QBITTORRENT_PASS}"
+    volumes:
+      - decluttarr_data:/config
+
   radarr:
     image: lscr.io/linuxserver/radarr:latest
     container_name: radarr
@@ -332,3 +373,4 @@ volumes:
   reddis_data:
   pinchflat_data:
   watchtower_data:
+  decluttarr_data:

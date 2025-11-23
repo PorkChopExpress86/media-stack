@@ -1,7 +1,7 @@
 # Backup Validation Report
 
 **Date:** October 4, 2025  
-**Repository:** MediaServer Docker Compose Setup  
+**Repository:** media-stack  
 
 ## Executive Summary
 
@@ -32,7 +32,7 @@ Successfully backed up 12 Docker volumes totaling **2,042.89 MB** of data. The c
 ### ✅ Backup Success
 - **All 12 volumes** backed up successfully
 - **Zero errors** during backup process
-- Backup files stored in: `C:\Users\Blake\Docker\MediaServer\vol_bkup\`
+- Backup files stored in: `C:\Users\Blake\Docker\media-stack\vol_bkup\`
 
 ### 📊 Compression Analysis
 
@@ -145,7 +145,7 @@ docker run --rm -v "./vol_bkup:/backup" alpine tar tzf /backup/mediaserver_nginx
 
 ## Backup Files Created
 
-All files stored in: `C:\Users\Blake\Docker\MediaServer\vol_bkup\`
+All files stored in: `C:\Users\Blake\Docker\media-stack\vol_bkup\`
 
 ```
 mediaserver_bazarr_data.tar.gz        4.31 MB

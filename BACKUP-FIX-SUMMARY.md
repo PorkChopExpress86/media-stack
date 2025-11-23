@@ -1,6 +1,7 @@
 # Backup Script Fix - Volume Name Resolution
 
 **Date:** October 5, 2025  
+**Repository:** media-stack  
 **Issue:** backup-volumes.ps1 was backing up empty/placeholder volumes instead of actual data  
 **Status:** ✅ FIXED
 
@@ -14,7 +15,7 @@ When using `backup-volumes.ps1 -ComposeVolumes`, the script backed up volumes li
 
 Docker Compose automatically prefixes volume names with the project name (directory name). For example:
 - `docker-compose.yaml` defines: `nginx_data`
-- Docker creates: `mediaserver_nginx_data`
+- Docker creates: `mediaserver_nginx_data` (based on current directory name)
 
 The script was backing up the volumes as named in the compose file, but Docker had created **both** versions:
 1. `mediaserver_nginx_data` ← **Contains actual data** (used by running containers)
