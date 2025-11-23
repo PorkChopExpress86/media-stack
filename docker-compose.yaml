@@ -1,4 +1,4 @@
-﻿---
+---
 services:
   nginx:
     container_name: nginx
@@ -374,3 +374,4 @@ volumes:
   pinchflat_data:
   watchtower_data:
   decluttarr_data:
+

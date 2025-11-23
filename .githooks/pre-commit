@@ -3,8 +3,17 @@
 STAGED=$(git diff --cached --name-only --diff-filter=ACM | grep -E '^docker-compose.yaml$' || true)
 if [ -n "$STAGED" ]; then
   echo "Running yamllint on docker-compose.yaml..."
-  docker run --rm -v "$(pwd):/work" -w /work cytopia/yamllint:latest docker-compose.yaml
-  RC=$?
+  # Use python yamllint instead of Docker to avoid path translation issues on Windows
+  if command -v python >/dev/null 2>&1; then
+    python -m yamllint -c .yamllint.yml docker-compose.yaml
+    RC=$?
+  elif command -v python3 >/dev/null 2>&1; then
+    python3 -m yamllint -c .yamllint.yml docker-compose.yaml
+    RC=$?
+  else
+    echo "Warning: Python not found. Skipping yamllint check."
+    exit 0
+  fi
   if [ $RC -ne 0 ]; then
     echo "yamllint failed. Please fix the issues before committing."
     exit $RC
