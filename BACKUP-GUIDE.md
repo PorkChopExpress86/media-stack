@@ -12,7 +12,7 @@
 .\scripts\backup-volumes.ps1 -WhatIf
 
 # Backup to custom directory
-.\scripts\backup-volumes.ps1 -BackupDir "D:\MediaServer-Backups"
+.\scripts\backup-volumes.ps1 -BackupDir "D:\media-stack-backups"
 
 # Backup only volumes from docker-compose.yaml
 .\scripts\backup-volumes.ps1 -ComposeVolumes
@@ -37,7 +37,7 @@
 .\scripts\restore-volumes.ps1 -Force
 
 # Restore from custom directory
-.\scripts\restore-volumes.ps1 -BackupDir "D:\MediaServer-Backups"
+.\scripts\restore-volumes.ps1 -BackupDir "D:\media-stack-backups"
 
 # Selective restore (specific volumes only)
 .\scripts\restore-volumes.ps1 -SelectiveRestore @('radarr_data', 'sonarr_data')
@@ -236,11 +236,11 @@ Get-ChildItem .\vol_bkup\*.tar.gz |
    ```
 
 2. **Create Basic Task:**
-   - Name: "MediaServer Backup"
+   - Name: "media-stack Backup"
    - Trigger: Daily at 3:00 AM
    - Action: Start a program
    - Program: `C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe`
-   - Arguments: `-ExecutionPolicy Bypass -File "C:\Users\Blake\Docker\MediaServer\scripts\backup-volumes.ps1"`
+   - Arguments: `-ExecutionPolicy Bypass -File "C:\Users\Blake\Docker\media-stack\scripts\backup-volumes.ps1"`
 
 3. **Advanced Settings:**
    - Run whether user is logged on or not
@@ -258,7 +258,7 @@ $trigger = New-ScheduledTaskTrigger -Daily -At 3am
 
 $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -DontStopOnIdleEnd
 
-Register-ScheduledTask -TaskName "MediaServer Backup" `
+Register-ScheduledTask -TaskName "media-stack Backup" `
     -Action $action `
     -Trigger $trigger `
     -Settings $settings `
@@ -339,8 +339,9 @@ docker compose stop  # Optional: for consistency
 ## 📚 Additional Resources
 
 - Main README: [README.md](../README.md)
-- Improvements Analysis: [IMPROVEMENTS.md](../IMPROVEMENTS.md)
 - Docker Compose Reference: [docker-compose.yaml](../docker-compose.yaml)
+- Backup Fix Summary: [BACKUP-FIX-SUMMARY.md](../BACKUP-FIX-SUMMARY.md)
+- Restore Fix Summary: [RESTORE-FIX-SUMMARY.md](../RESTORE-FIX-SUMMARY.md)
 
 ---
 
