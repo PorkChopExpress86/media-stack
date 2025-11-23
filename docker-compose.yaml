@@ -98,30 +98,30 @@ services:
       PUID: 1000
       PGID: 1000
       LOG_LEVEL: INFO
-      TEST_RUN: False
+      TEST_RUN: false
       TIMER: 60
-      
+
       # Jobs
-      REMOVE_FAILED_DOWNLOADS: True
-      REMOVE_FAILED_IMPORTS: True
-      REMOVE_METADATA_MISSING: True
-      REMOVE_ORPHANS: True
-      REMOVE_SLOW: True
-      REMOVE_STALLED: True
-      
+      REMOVE_FAILED_DOWNLOADS: true
+      REMOVE_FAILED_IMPORTS: true
+      REMOVE_METADATA_MISSING: true
+      REMOVE_ORPHANS: true
+      REMOVE_SLOW: true
+      REMOVE_STALLED: true
+
       # Instances
       RADARR: >
         - base_url: "http://vpn:7878"
           api_key: "${RADARR_API_KEY}"
-      
+
       SONARR: >
         - base_url: "http://vpn:8989"
           api_key: "${SONARR_API_KEY}"
-      
+
       PROWLARR: >
         - base_url: "http://vpn:9696"
           api_key: "${PROWLARR_API_KEY}"
-      
+
       # Download Clients
       QBITTORRENT: >
         - base_url: "http://vpn:8080"
