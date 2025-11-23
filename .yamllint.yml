@@ -8,6 +8,11 @@ rules:
     level: error
   trailing-spaces:
     level: error
+  empty-lines:
+    max: 1
+    level: error
+  # comments rule was previously disabled to accommodate a one-space formatter.
+  # Re-enable default comment checks now that formatting-on-save is fixed.
   document-start:
     present: true
     level: warning

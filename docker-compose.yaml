@@ -1,3 +1,4 @@
+﻿---
 services:
   nginx:
     container_name: nginx
@@ -5,9 +6,9 @@ services:
     restart: always
     ports:
       # These ports are in format <host-port>:<container-port>
-      - '80:80' # Public HTTP Port
-      - '443:443' # Public HTTPS Port
-      - '81:81' # Admin Web Port
+      - '80:80'  # Public HTTP Port
+      - '443:443'  # Public HTTPS Port
+      - '81:81'  # Admin Web Port
     environment:
       DISABLE_IPV6: 'true'
     volumes:
@@ -28,15 +29,15 @@ services:
   vpn:
     image: qmcgaw/gluetun:latest
     container_name: vpn
-    # line above must be uncommented to allow external containers to connect. See https:\github.com/qdm12/gluetun/wiki/Connect-a-container-to-gluetun#external-container-to-gluetun
+    # Un-comment the image line above to allow external containers to connect (see gluetun wiki)
     cap_add:
       - NET_ADMIN
     devices:
       - /dev/net/tun:/dev/net/tun
     ports:
-      - 8888:8888/tcp # HTTP proxy
-      - 8388:8388/tcp # Shadowsocks
-      - 8389:8388/udp # Shadowsocks
+      - 8888:8888/tcp  # HTTP proxy
+      - 8388:8388/tcp  # Shadowsocks
+      - 8389:8388/udp  # Shadowsocks
       # Radarr
       - 7878:7878
       # Sonarr
@@ -45,7 +46,7 @@ services:
       - 8787:8787
       # Prowlarr
       - 9696:9696
-      - 1080:1080/tcp # SOCKS5 proxy
+      - 1080:1080/tcp  # SOCKS5 proxy
       # Lidarr
       - 8686:8686
       # # Bazarr
@@ -73,7 +74,7 @@ services:
       # - VPN_PORT_FORWARDING_STATUS_FILE=/gluetun/piaportforward.json
     restart: always
 
-######### *ARR SERVERS#########################################################
+  ######### *ARR SERVERS#########################################################
   prowlarr:
     image: lscr.io/linuxserver/prowlarr:latest
     container_name: prowlarr
@@ -123,7 +124,7 @@ services:
     network_mode: "service:vpn"
     depends_on:
       - vpn
-  
+
   bazarr:
     image: lscr.io/linuxserver/bazarr:latest
     container_name: bazarr
@@ -131,13 +132,13 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=${TZ:-America/Chicago}
-    # ports:
+      # ports:
       # Bazarr
       # - 6767:6767
     volumes:
       - bazarr_data:/config
       - ${movies}:/movies
-      - ${tv_shows}:/tv_shows 
+      - ${tv_shows}:/tv_shows
       - ${kids_movies}:/kids_movies
       - ${kids_tv_shows}:/kids_tv_shows
     restart: always
@@ -161,7 +162,7 @@ services:
     depends_on:
       - vpn
 
-########## AUDIOBOOKSHELF######################################################
+  ########## AUDIOBOOKSHELF######################################################
   audiobookshelf:
     image: ghcr.io/advplyr/audiobookshelf:latest
     ports:
@@ -175,15 +176,16 @@ services:
       - TZ=${TZ:-America/Chicago}
     restart: always
 
-#########IMMICH SERVER  #######################################################
+  # IMMICH SERVER
   immich-server:
     container_name: immich_server
     image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-release}
     extends:
       file: hwaccel.transcoding.yml
-      service: nvenc # set to one of [nvenc, quicksync, rkmpp, vaapi, vaapi-wsl] for accelerated transcoding
+      service: nvenc  # set to one of [nvenc, quicksync, rkmpp, vaapi, vaapi-wsl] for accelerated transcoding
     volumes:
-      # Do not edit the next line. If you want to change the media storage location on your system, edit the value of UPLOAD_LOCATION in the .env file
+      # Do not edit the next line.
+      # To change the media storage location, edit `UPLOAD_LOCATION` in `.env`
       - ${UPLOAD_LOCATION}:/usr/src/app/upload
       - /etc/localtime:/etc/localtime:ro
     env_file:
@@ -202,9 +204,12 @@ services:
     # For hardware acceleration, add one of -[armnn, cuda, openvino] to the image tag.
     # Example tag: ${IMMICH_VERSION:-release}-cuda
     image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION:-release}-cuda
-    extends: # uncomment this section for hardware acceleration - see https://immich.app/docs/features/ml-hardware-acceleration
+    extends:
+      # Uncomment this section for hardware acceleration - see:
+      # https://immich.app/docs/features/ml-hardware-acceleration
       file: hwaccel.ml.yml
-      service: cuda # set to one of [armnn, cuda, openvino, openvino-wsl] for accelerated inference - use the `-wsl` version for WSL2 where applicable
+      service: cuda  # set to one of [armnn, cuda, openvino, openvino-wsl]
+      # For WSL2 use a `-wsl` variant where applicable
     volumes:
       - model-cache:/cache
     env_file:
@@ -224,40 +229,59 @@ services:
 
   database:
     container_name: immich_postgres
-    image: docker.io/tensorchord/pgvecto-rs:pg14-v0.2.0@sha256:90724186f0a3517cf6914295b5ab410db9ce23190a2d9d0b9dd6463e3fa298f0
+    image: ${DB_IMAGE}
     environment:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_USER: ${DB_USERNAME}
       POSTGRES_DB: ${DB_DATABASE_NAME}
       POSTGRES_INITDB_ARGS: '--data-checksums'
     volumes:
-      # Do not edit the next line. If you want to change the database storage location on your system, edit the value of DB_DATA_LOCATION in the .env file
+      # Do not edit the next line.
+      # To change the database storage location, edit `DB_DATA_LOCATION` in `.env`
       - ${DB_DATA_LOCATION}:/var/lib/postgresql/data
     healthcheck:
-      test: pg_isready --dbname='${DB_DATABASE_NAME}' --username='${DB_USERNAME}' || exit 1; Chksum="$$(psql --dbname='${DB_DATABASE_NAME}' --username='${DB_USERNAME}' --tuples-only --no-align --command='SELECT COALESCE(SUM(checksum_failures), 0) FROM pg_stat_database')"; echo "checksum failure count is $$Chksum"; [ "$$Chksum" = '0' ] || exit 1
+      test: >
+        pg_isready --dbname='${DB_DATABASE_NAME}' --username='${DB_USERNAME}' || exit 1;
+        Chksum="$$(psql --dbname='${DB_DATABASE_NAME}' \
+          --username='${DB_USERNAME}' --tuples-only --no-align \
+          --command='SELECT COALESCE(SUM(checksum_failures), 0) FROM pg_stat_database')";
+        echo "checksum failure count is $$Chksum";
+        [ "$$Chksum" = '0' ] || exit 1
       interval: 5m
       start_interval: 30s
       start_period: 5m
-    command: ["postgres", "-c", "shared_preload_libraries=vectors.so", "-c", 'search_path="$$user", public, vectors', "-c", "logging_collector=on", "-c", "max_wal_size=2GB", "-c", "shared_buffers=512MB", "-c", "wal_compression=on"]
+    command:
+      - "postgres"
+      - "-c"
+      - "shared_preload_libraries=vectors.so"
+      - "-c"
+      - 'search_path="$$user", public, vectors'
+      - "-c"
+      - "logging_collector=on"
+      - "-c"
+      - "max_wal_size=2GB"
+      - "-c"
+      - "shared_buffers=512MB"
+      - "-c"
+      - "wal_compression=on"
     restart: always
 
   actual_server:
     container_name: actual_server
     image: docker.io/actualbudget/actual-server:latest
     ports:
-      # This line makes Actual available at port 5006 of the device you run the server on,
-      # i.e. http://localhost:5006. You can change the first number to change the port, if you want.
       - '5006:5006'
-    # environment:
-      # Uncomment any of the lines below to set configuration options.
+      # This makes Actual available at http://<host>:5006
+      # To change the host port, edit the left-hand value above.
+      # environment:
+      # Uncomment any of the lines below to set configuration options:
       # - ACTUAL_HTTPS_KEY=/data/selfhost.key
       # - ACTUAL_HTTPS_CERT=/data/selfhost.crt
       # - ACTUAL_PORT=5006
       # - ACTUAL_UPLOAD_FILE_SYNC_SIZE_LIMIT_MB=20
       # - ACTUAL_UPLOAD_SYNC_ENCRYPTED_FILE_SYNC_SIZE_LIMIT_MB=50
       # - ACTUAL_UPLOAD_FILE_SIZE_LIMIT_MB=20
-      # See all options and more details at https://actualbudget.github.io/docs/Installing/Configuration
-      # !! If you are not using any of these options, remove the 'environment:' tag entirely.
+      # If you are not using any of these options, remove the 'environment:' tag entirely.
     volumes:
       # Change './actual-data' below to the path to the folder you want Actual to store its data in on your server.
       # '/data' is the path Actual will look for its files in by default, so leave that as-is.
@@ -275,7 +299,7 @@ services:
       - pinchflat_data:/config
       - "${pinchflat_downloads}:/downloads"
     restart: always
-  
+
   watchtower:
     image: containrrr/watchtower:1.7.1
     container_name: watchtower
@@ -308,4 +332,3 @@ volumes:
   reddis_data:
   pinchflat_data:
   watchtower_data:
-
