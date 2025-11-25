@@ -36,34 +36,34 @@ jobs:
         # Detect any service-level profiles and run `docker compose config --profile <profile>` for each one
         run: |
           python - <<'PY'
-import os,yaml,sys,subprocess
-f='docker-compose.yaml'
-try:
-    data=yaml.safe_load(open(f)) or {}
-except Exception as e:
-    print('Failed to parse YAML for profile detection:', e)
-    sys.exit(0)
-profiles=set()
-for svc in (data.get('services') or {}).values():
-    p=svc.get('profiles')
-    if isinstance(p,str): profiles.add(p)
-    elif isinstance(p,(list,tuple)):
-        for x in p:
-            profiles.add(str(x))
-if not profiles:
-    print('No service-level profiles detected')
-    sys.exit(0)
-workspace=os.environ.get('GITHUB_WORKSPACE','.')
-compose_image=os.environ.get('COMPOSE_IMAGE','docker/compose:1.29.2')
-for prof in sorted(profiles):
-    print('Validating compose config for profile:', prof)
-    cmd=['docker','run','--rm','-v',f"{workspace}:/workdir",'-w','/workdir',compose_image,'config','--profile',prof]
-    try:
-        subprocess.check_call(cmd)
-    except subprocess.CalledProcessError as e:
-        print('docker compose config failed for profile',prof,'exit',e.returncode)
-        sys.exit(e.returncode)
-PY
+          import os,yaml,sys,subprocess
+          f='docker-compose.yaml'
+          try:
+              data=yaml.safe_load(open(f)) or {}
+          except Exception as e:
+              print('Failed to parse YAML for profile detection:', e)
+              sys.exit(0)
+          profiles=set()
+          for svc in (data.get('services') or {}).values():
+              p=svc.get('profiles')
+              if isinstance(p,str): profiles.add(p)
+              elif isinstance(p,(list,tuple)):
+                  for x in p:
+                      profiles.add(str(x))
+          if not profiles:
+              print('No service-level profiles detected')
+              sys.exit(0)
+          workspace=os.environ.get('GITHUB_WORKSPACE','.')
+          compose_image=os.environ.get('COMPOSE_IMAGE','docker/compose:1.29.2')
+          for prof in sorted(profiles):
+              print('Validating compose config for profile:', prof)
+              cmd=['docker','run','--rm','-v',f"{workspace}:/workdir",'-w','/workdir',compose_image,'config','--profile',prof]
+              try:
+                  subprocess.check_call(cmd)
+              except subprocess.CalledProcessError as e:
+                  print('docker compose config failed for profile',prof,'exit',e.returncode)
+                  sys.exit(e.returncode)
+          PY
 
   pull-images:
     name: Verify image pullability
