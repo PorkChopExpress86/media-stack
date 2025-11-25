@@ -16,6 +16,25 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up environment
+        run: |
+          # Copy .env.example to .env with placeholder values to satisfy compose validation
+          cp .env.example .env
+          # Fill in required path variables with dummy values for validation
+          echo "movies=/tmp/movies" >> .env
+          echo "other_movies=/tmp/other_movies" >> .env
+          echo "tv_shows=/tmp/tv_shows" >> .env
+          echo "other_shows=/tmp/other_shows" >> .env
+          echo "kids_movies=/tmp/kids_movies" >> .env
+          echo "kids_tv_shows=/tmp/kids_tv_shows" >> .env
+          echo "qbittorrent_downloads=/tmp/downloads" >> .env
+          echo "audiobooks=/tmp/audiobooks" >> .env
+          echo "podcasts=/tmp/podcasts" >> .env
+          echo "pinchflat_downloads=/tmp/pinchflat" >> .env
+          echo "UPLOAD_LOCATION=/tmp/immich/upload" >> .env
+          echo "DB_DATA_LOCATION=/tmp/immich/db" >> .env
+          echo "DB_PASSWORD=testpassword" >> .env
+
       - name: Set up Python and tools
         run: |
           python -m pip install --upgrade pip
