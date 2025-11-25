@@ -92,6 +92,24 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up environment
+        run: |
+          # Copy .env.example to .env and fill in required path variables with dummy values
+          cp .env.example .env
+          sed -i 's|^movies=$|movies=/tmp/movies|' .env
+          sed -i 's|^other_movies=$|other_movies=/tmp/other_movies|' .env
+          sed -i 's|^tv_shows=$|tv_shows=/tmp/tv_shows|' .env
+          sed -i 's|^other_shows=$|other_shows=/tmp/other_shows|' .env
+          sed -i 's|^kids_movies=$|kids_movies=/tmp/kids_movies|' .env
+          sed -i 's|^kids_tv_shows=$|kids_tv_shows=/tmp/kids_tv_shows|' .env
+          sed -i 's|^qbittorrent_downloads=$|qbittorrent_downloads=/tmp/downloads|' .env
+          sed -i 's|^audiobooks=$|audiobooks=/tmp/audiobooks|' .env
+          sed -i 's|^podcasts=$|podcasts=/tmp/podcasts|' .env
+          sed -i 's|^pinchflat_downloads=$|pinchflat_downloads=/tmp/pinchflat|' .env
+          sed -i 's|^UPLOAD_LOCATION=$|UPLOAD_LOCATION=/tmp/immich/upload|' .env
+          sed -i 's|^DB_DATA_LOCATION=$|DB_DATA_LOCATION=/tmp/immich/db|' .env
+          sed -i 's|^DB_PASSWORD=$|DB_PASSWORD=testpassword|' .env
+
       - name: Pull images (quiet)
         run: |
           # Attempt to pull images referenced in docker-compose, quiet to reduce logs
