@@ -57,7 +57,7 @@ workspace=os.environ.get('GITHUB_WORKSPACE','.')
 compose_image=os.environ.get('COMPOSE_IMAGE','docker/compose:1.29.2')
 for prof in sorted(profiles):
     print('Validating compose config for profile:', prof)
-  cmd=['docker','run','--rm','-v',f"{workspace}:/workdir",'-w','/workdir',compose_image,'config','--profile',prof]
+    cmd=['docker','run','--rm','-v',f"{workspace}:/workdir",'-w','/workdir',compose_image,'config','--profile',prof]
     try:
         subprocess.check_call(cmd)
     except subprocess.CalledProcessError as e:
