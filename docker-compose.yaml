@@ -23,13 +23,13 @@ services:
     volumes:
       - ./derbynet_data:/var/lib/derbynet
       - /etc/localtime:/etc/localtime:ro
-      # edit passwords on host system `sudo vim /var/lib/docker/volumes/faraday_derbyet_data/_data/config-roles.inc`
+      # edit passwords on host system
+      # `sudo vim /var/lib/docker/volumes/faraday_derbyet_data/_data/config-roles.inc`
     restart: always
 
   vpn:
     image: qmcgaw/gluetun:latest
     container_name: vpn
-    # Un-comment the image line above to allow external containers to connect (see gluetun wiki)
     cap_add:
       - NET_ADMIN
     devices:
@@ -98,7 +98,7 @@ services:
       PUID: 1000
       PGID: 1000
       LOG_LEVEL: INFO
-      TEST_RUN: false
+      TEST_RUN: "false"
       TIMER: 60
 
       # Jobs
