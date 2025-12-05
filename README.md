@@ -16,7 +16,7 @@ A comprehensive Docker Compose setup for a home media server with automated back
 
 ### Media Management
 - **Nginx Proxy Manager** - Reverse proxy with SSL management (Port 81)
-- **Jellyfin/Plex** - Media streaming servers
+- **Jellyfin** - Media streaming server with GPU acceleration (Port 8096)
 - **Audiobookshelf** - Audiobook and podcast server (Port 13378)
 
 ### Download Automation (*arr Stack)
@@ -25,16 +25,15 @@ A comprehensive Docker Compose setup for a home media server with automated back
 - **Sonarr** - TV show management (Port 8989)
 - **Bazarr** - Subtitle management (Port 6767)
 - **qBittorrent** - Torrent client (Port 8080)
-- **Decluttarr** - Queue cleanup (see details below)
+- **Decluttarr** - Automated queue cleanup for *arr services
 
 ### Additional Services
-- **Gluetun VPN** - VPN container for *arr services
-- **Immich** - Photo management (Port 2283)
+- **Gluetun VPN** - VPN container for *arr services (PIA)
+- **Immich** - Photo management with ML features (Port 2283)
 - **Pinchflat** - YouTube downloader (Port 8945)
-- **Focalboard** - Project management (Port 8046)
 - **Actual Budget** - Budget tracking (Port 5006)
 - **DerbyNet** - Pinewood derby race management (Port 8050)
-- **Watchtower** - Automatic container updates
+- **Watchtower** - Automatic container updates (every 6 hours)
 
 
 
@@ -82,14 +81,14 @@ docker compose up -d
 
 - **Nginx Proxy Manager**: http://localhost:81
   - Default credentials: `admin@example.com` / `changeme`
+- **Jellyfin**: http://localhost:8096
 - **Audiobookshelf**: http://localhost:13378
 - **Immich**: http://localhost:2283
 - **Pinchflat**: http://localhost:8945
 - **Actual Budget**: http://localhost:5006
-- **Focalboard**: http://localhost:8046
 - **DerbyNet**: http://localhost:8050
 
-*arr services are accessible through VPN container ports (Prowlarr: 9696, Radarr: 7878, Sonarr: 8989, etc.)
+*arr services are accessible through VPN container ports (Prowlarr: 9696, Radarr: 7878, Sonarr: 8989, Bazarr: 6767, qBittorrent: 8080)
 
 ## ⚙️ Configuration
 
@@ -105,8 +104,7 @@ other_movies=/path/to/other_movies
 other_shows=/path/to/other_shows
 kids_movies=/path/to/kids_movies
 kids_tv_shows=/path/to/kids_tv_shows
-music=/path/to/music
-books=/path/to/books
+home_movies=/path/to/home_movies
 podcasts=/path/to/podcasts
 audiobooks=/path/to/audiobooks
 qbittorrent_downloads=/path/to/downloads
@@ -226,42 +224,37 @@ Back up all Docker volumes to compressed archives:
 
 Backups are stored as `.tar.gz` files in `vol_bkup/` by default.
 
-#### Restore Single Volume
+#### Restore Volumes
 
-Restore a specific volume from backup:
+Restore volumes from backup archives:
 
-```powershell
-.\scripts\restore-volume.ps1
-```
-
-**Options:**
-- `-BackupDir "D:\backups"` - Specify backup location
-- `-Force` - Clear existing volume data before restore
-- `-WhatIf` - Preview without executing
-
-**Example:**
 ```powershell
 # Restore all volumes
 .\scripts\restore-volumes.ps1
 
-# Force restore (clears existing data)
+# Restore with options
+.\scripts\restore-volumes.ps1 -StopContainersFirst -VerifyAfterRestore
+
+# Force restore (clears existing data first)
 .\scripts\restore-volumes.ps1 -Force
 
-# Preview restore
+# Preview restore operation
 .\scripts\restore-volumes.ps1 -WhatIf
+
+# Specify custom backup directory
+.\scripts\restore-volumes.ps1 -BackupDir "D:\backups"
 ```
+
+**Options:**
+- `-StopContainersFirst` - Stop containers using each volume before restore
+- `-VerifyAfterRestore` - List volume contents after restore
+- `-Force` - Clear existing volume data before restore
+- `-WhatIf` - Preview without executing
+- `-BackupDir` - Specify backup location (default: `vol_bkup/`)
 
 ⚠️ **Warning:** Use `-Force` carefully as it will delete existing data!
 
-#### Restore All Volumes
-
-Restore all volumes from backup directory:
-
-```powershell
-.\scripts\restore-volumes.ps1
-```
-
-This script will:
+The script will:
 1. Find all `.tar.gz` backups in the backup directory
 2. Create volumes if they don't exist
 3. Restore data from archives
@@ -459,11 +452,12 @@ media-stack/
 ├── file.log                 # Update log file
 ├── hwaccel.*.yml            # Hardware acceleration configs
 ├── scripts/                 # Utility scripts
-│   ├── backup-volumes.ps1   # Backup script
-│   ├── restore-volume.ps1   # Single restore script
-│   ├── restore-volumes.ps1  # Batch restore script
+│   ├── backup-volumes.ps1   # Backup all volumes
+│   ├── restore-volumes.ps1  # Restore volumes from backups
+│   ├── cleanup-old-volumes.ps1
+│   ├── migrate-volumes.ps1
 │   └── *.sh                 # Legacy bash scripts
-├── vol_bkup/               # Backup archives
+├── vol_bkup/               # Backup archives (ignored by git)
 ├── audiobookshelf_data/    # Bind mount directories
 ├── budget_data/
 └── derbynet_data/
@@ -500,4 +494,4 @@ For issues or questions, please open a GitHub issue.
 
 ---
 
-**Last Updated:** October 2025
+**Last Updated:** December 2025
