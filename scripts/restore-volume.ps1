@@ -1,4 +1,4 @@
-# PowerShell script to restore Docker volumes from .tar.gz backups
+<# Compatibility shim: use `restore-volumes.ps1` instead. #>
 
 param (
     [string]$BackupDir = "$PSScriptRoot\..\vol_bkup",
@@ -60,21 +60,8 @@ foreach ($backup in $backups) {
         }
     }
 
-    # Use resolved directory path for the bind mount
-    $backupDirForDocker = $backup.DirectoryName
-
-    # Restore the backup into the volume using argument array to avoid interpolation issues
-    $mountVolume = $volumeName + ':/volume'
-    $mountBackup = $backupDirForDocker + ':/backup'
-    $tarCmd = "cd /volume && tar xzf /backup/$($backup.Name)"
-    $processArgs = @('run', '--rm', '-v', $mountVolume, '-v', $mountBackup, 'alpine', 'sh', '-c', $tarCmd)
-    Write-Host "Running: docker $($processArgs -join ' ')"
-    & docker @processArgs
-
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "Successfully restored $volumeName"
-    }
-    else {
-        Write-Error "Failed to restore $volumeName (exit code $LASTEXITCODE)"
-    }
+    # Forward to consolidated restore script
+    Write-Host "Delegating to scripts\restore-volumes.ps1 (use -WhatIf to preview)"
+    & "$PSScriptRoot\restore-volumes.ps1" -BackupDir $BackupDir @($(if ($Force) {'-Force'})) @($(if ($WhatIf) {'-WhatIf'}))
+    break
 }
