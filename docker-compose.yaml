@@ -6,9 +6,9 @@ services:
     restart: always
     ports:
       # These ports are in format <host-port>:<container-port>
-      - '80:80'  # Public HTTP Port
-      - '443:443'  # Public HTTPS Port
-      - '81:81'  # Admin Web Port
+      - '80:80' # Public HTTP Port
+      - '443:443' # Public HTTPS Port
+      - '81:81' # Admin Web Port
     environment:
       DISABLE_IPV6: 'true'
     volumes:
@@ -35,9 +35,9 @@ services:
     devices:
       - /dev/net/tun:/dev/net/tun
     ports:
-      - 8888:8888/tcp  # HTTP proxy
-      - 8388:8388/tcp  # Shadowsocks
-      - 8389:8388/udp  # Shadowsocks
+      - 8888:8888/tcp # HTTP proxy
+      - 8388:8388/tcp # Shadowsocks
+      - 8389:8388/udp # Shadowsocks
       # Radarr
       - 7878:7878
       # Sonarr
@@ -46,7 +46,7 @@ services:
       - 8787:8787
       # Prowlarr
       - 9696:9696
-      - 1080:1080/tcp  # SOCKS5 proxy
+      - 1080:1080/tcp # SOCKS5 proxy
       # Lidarr
       - 8686:8686
       # # Bazarr
@@ -223,7 +223,7 @@ services:
     image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-release}
     extends:
       file: hwaccel.transcoding.yml
-      service: nvenc  # set to one of [nvenc, quicksync, rkmpp, vaapi, vaapi-wsl] for accelerated transcoding
+      service: nvenc # set to one of [nvenc, quicksync, rkmpp, vaapi, vaapi-wsl] for accelerated transcoding
     volumes:
       # Do not edit the next line.
       # To change the media storage location, edit `UPLOAD_LOCATION` in `.env`
@@ -249,7 +249,7 @@ services:
       # Uncomment this section for hardware acceleration - see:
       # https://immich.app/docs/features/ml-hardware-acceleration
       file: hwaccel.ml.yml
-      service: cuda  # set to one of [armnn, cuda, openvino, openvino-wsl]
+      service: cuda # set to one of [armnn, cuda, openvino, openvino-wsl]
       # For WSL2 use a `-wsl` variant where applicable
     volumes:
       - model-cache:/cache
@@ -282,12 +282,10 @@ services:
       - ${DB_DATA_LOCATION}:/var/lib/postgresql/data
     healthcheck:
       test: >
-        pg_isready --dbname='${DB_DATABASE_NAME}' --username='${DB_USERNAME}' || exit 1;
-        Chksum="$$(psql --dbname='${DB_DATABASE_NAME}' \
+        pg_isready --dbname='${DB_DATABASE_NAME}' --username='${DB_USERNAME}' || exit 1; Chksum="$$(psql --dbname='${DB_DATABASE_NAME}' \
           --username='${DB_USERNAME}' --tuples-only --no-align \
           --command='SELECT COALESCE(SUM(checksum_failures), 0) FROM pg_stat_database')";
-        echo "checksum failure count is $$Chksum";
-        [ "$$Chksum" = '0' ] || exit 1
+        echo "checksum failure count is $$Chksum"; [ "$$Chksum" = '0' ] || exit 1
       interval: 5m
       start_interval: 30s
       start_period: 5m
@@ -312,20 +310,7 @@ services:
     image: docker.io/actualbudget/actual-server:latest
     ports:
       - '5006:5006'
-      # This makes Actual available at http://<host>:5006
-      # To change the host port, edit the left-hand value above.
-      # environment:
-      # Uncomment any of the lines below to set configuration options:
-      # - ACTUAL_HTTPS_KEY=/data/selfhost.key
-      # - ACTUAL_HTTPS_CERT=/data/selfhost.crt
-      # - ACTUAL_PORT=5006
-      # - ACTUAL_UPLOAD_FILE_SYNC_SIZE_LIMIT_MB=20
-      # - ACTUAL_UPLOAD_SYNC_ENCRYPTED_FILE_SYNC_SIZE_LIMIT_MB=50
-      # - ACTUAL_UPLOAD_FILE_SIZE_LIMIT_MB=20
-      # If you are not using any of these options, remove the 'environment:' tag entirely.
     volumes:
-      # Change './actual-data' below to the path to the folder you want Actual to store its data in on your server.
-      # '/data' is the path Actual will look for its files in by default, so leave that as-is.
       - ./budget_data:/data
     restart: always
 
@@ -371,7 +356,7 @@ services:
           devices:
             - driver: nvidia
               count: 1
-              capabilities: [gpu]
+              capabilities: [ gpu ]
     restart: always
 
   watchtower:

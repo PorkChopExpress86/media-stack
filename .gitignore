@@ -1,6 +1,11 @@
 # Ignore backup volume archives
 vol_bkup/
 !vol_bkup/.gitkeep
+
+# Backups from `scripts/backup-volumes.ps1`
+# These are intentionally kept in the repo for now but should not be tracked by Git
+# (vol_bkup contains large tar.gz archives)
+vol_bkup/*.tar.gz
 .env
 .env.linux
 backup/
