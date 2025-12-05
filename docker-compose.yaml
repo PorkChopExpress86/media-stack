@@ -341,6 +341,39 @@ services:
       - "${pinchflat_downloads}:/downloads"
     restart: always
 
+  jellyfin:
+    image: jellyfin/jellyfin:latest
+    container_name: jellyfin
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ:-America/Chicago}
+      # NVIDIA GPU Settings
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+    volumes:
+      - jellyfin_config:/config
+      - jellyfin_cache:/cache
+      # Media Libraries
+      - ${movies}:/media/movies
+      - ${tv_shows}:/media/tv_shows
+      - ${kids_movies}:/media/kids_movies
+      - ${kids_tv_shows}:/media/kids_tv_shows
+      - ${other_movies}:/media/other_movies
+      - ${other_shows}:/media/other_shows
+      - ${pinchflat_downloads}:/pinchflat
+      - ${home_movies}:/media/home_movies
+    ports:
+      - 8096:8096
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: always
+
   watchtower:
     image: containrrr/watchtower:1.7.1
     container_name: watchtower
@@ -374,3 +407,5 @@ volumes:
   pinchflat_data:
   watchtower_data:
   decluttarr_data:
+  jellyfin_config:
+  jellyfin_cache:
