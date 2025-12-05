@@ -150,31 +150,11 @@ environment:
 
 Find your timezone: [List of TZ Database Time Zones](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)
 
-## 🛠 Development: Git hooks (optional but recommended)
+## Notes
 
-Add the repository git hooks path so commits will run a quick `yamllint` check
-for `docker-compose.yaml` before committing. This helps avoid syntax/style
-errors that would break deployments.
-
-Enable hooks locally with:
-
-```powershell
-git config core.hooksPath .githooks
-```
-
-What the hook does:
-- If `docker-compose.yaml` is staged for commit, the pre-commit script runs
-   `yamllint` (via Docker) and aborts the commit if linting fails.
-
-Notes:
-- This is optional; enabling the hooks is a local step (not enforced by GitHub).
-- On Windows PowerShell you may need Git Bash or a POSIX-compatible shell for
-   the hook to run as written. Alternatively, run the yamllint container manually:
-
-```powershell
-docker run --rm -v "${PWD}:/work" -w /work cytopia/yamllint:latest docker-compose.yaml
-```
-
+- **yamllint removed:** Project no longer enforces `yamllint` checks locally or in CI.
+  If you previously enabled the repository git hooks, you can restore the default
+  Git hooks path with `git config --unset core.hooksPath`.
 
 ## Decluttarr (details)
 
