@@ -1,5 +1,0 @@
-extends: default
-extends: default
-rules:
-  line-length:
-    "# yamllint config removed — yamllint is no longer used in this repository."
