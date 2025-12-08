@@ -203,16 +203,14 @@ services:
     depends_on:
       - vpn
 
-  ########## AUDIOBOOKSHELF######################################################
   audiobookshelf:
     image: ghcr.io/advplyr/audiobookshelf:latest
     ports:
       - 13378:80
     volumes:
+      - audiobookshelf_data:/config
       - ${audiobooks}:/audiobooks
       - ${podcasts}:/podcasts
-      - ./audiobookshelf_data:/config
-      - ./audiobookshelf_data:/metadata
     environment:
       - TZ=${TZ:-America/Chicago}
     restart: always
