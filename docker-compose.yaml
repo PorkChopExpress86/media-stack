@@ -225,6 +225,7 @@ services:
       file: hwaccel.transcoding.yml
       service: nvenc # set to one of [nvenc, quicksync, rkmpp, vaapi, vaapi-wsl] for accelerated transcoding
     volumes:
+      - immich_server_data:/data
       # Do not edit the next line.
       # To change the media storage location, edit `UPLOAD_LOCATION` in `.env`
       - ${UPLOAD_LOCATION}:/usr/src/app/upload
@@ -265,7 +266,7 @@ services:
     healthcheck:
       test: redis-cli ping || exit 1
     volumes:
-      - reddis_data:/data
+      - immich_redis_data:/data
     restart: always
 
   database:
@@ -388,7 +389,8 @@ volumes:
   vpn_data:
   bazarr_data:
   gluetun_data:
-  reddis_data:
+  immich_redis_data:
+  immich_server_data:
   pinchflat_data:
   watchtower_data:
   decluttarr_data:
