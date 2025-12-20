@@ -349,14 +349,15 @@ services:
       - ${home_movies}:/media/home_movies
     ports:
       - 8096:8096
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [ gpu ]
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [ gpu ]
     restart: always
+    gpus: all
 
   watchtower:
     image: containrrr/watchtower:1.7.1
