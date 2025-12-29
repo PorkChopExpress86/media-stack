@@ -6,9 +6,11 @@ services:
     restart: always
     ports:
       # These ports are in format <host-port>:<container-port>
-      - '80:80' # Public HTTP Port
-      - '443:443' # Public HTTPS Port
-      - '81:81' # Admin Web Port
+      - 80:80 # Public HTTP Port
+      - 443:443 # Public HTTPS Port
+      - 81:81 # Admin Web Port
+      - 19132:19132/udp # Minecraft Bedrock Port
+      - 19133:19133/udp # Minecraft Bedrock Creative Port
     environment:
       DISABLE_IPV6: 'true'
     volumes:
@@ -358,6 +360,50 @@ services:
     #           capabilities: [ gpu ]
     restart: always
     gpus: all
+  
+  minecraft-survival:
+    image: itzg/minecraft-bedrock-server:latest
+    container_name: minecraft-survival
+    environment:
+      EULA: "TRUE"
+      GAMEMODE: survival
+      DIFFICULTY: easy
+      PVP: "true"
+      ALLOW_CHEATS: "false"
+      MAX_PLAYERS: 10
+      LEVEL_NAME: "Survival World"
+      LEVEL_SEED: "42"
+      LEVEL_TYPE: "DEFAULT"
+    # ports:
+    #   - "19132:19132/udp"
+    volumes:
+      - ./survival_data:/data
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+
+  # Creative Mode Server
+  minecraft-creative:
+    image: itzg/minecraft-bedrock-server:latest
+    container_name: minecraft-creative
+    environment:
+      EULA: "TRUE"
+      GAMEMODE: creative
+      DIFFICULTY: peaceful
+      PVP: "false"
+      ALLOW_CHEATS: "true"
+      MAX_PLAYERS: 10
+      LEVEL_NAME: "Creative World"
+      LEVEL_SEED: "42"
+      LEVEL_TYPE: "DEFAULT"
+    # ports:
+    #   - "19133:19132/udp"
+    volumes:
+      - ./creative_data:/data
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+
 
   watchtower:
     image: containrrr/watchtower:1.7.1
