@@ -23,7 +23,7 @@ services:
     ports:
       - 8050:80
     volumes:
-      - ./derbynet_data:/var/lib/derbynet
+      - ./data/derbynet:/var/lib/derbynet
       - /etc/localtime:/etc/localtime:ro
       # edit passwords on host system
       # `sudo vim /var/lib/docker/volumes/faraday_derbyet_data/_data/config-roles.inc`
@@ -221,9 +221,9 @@ services:
   immich-server:
     container_name: immich_server
     image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-release}
-    extends:
-      file: hwaccel.transcoding.yml
-      service: nvenc # set to one of [nvenc, quicksync, rkmpp, vaapi, vaapi-wsl] for accelerated transcoding
+    # extends:
+    #   file: config/hwaccel.transcoding.yml
+    #   service: nvenc # set to one of [nvenc, quicksync, rkmpp, vaapi, vaapi-wsl] for accelerated transcoding
     volumes:
       - immich_server_data:/data
       # Do not edit the next line.
@@ -234,6 +234,8 @@ services:
       - .env
     ports:
       - 2283:2283
+    # environment:
+    #   - DB_SKIP_MIGRATIONS=true
     depends_on:
       - redis
       - database
@@ -245,12 +247,12 @@ services:
     container_name: immich_machine_learning
     # For hardware acceleration, add one of -[armnn, cuda, openvino] to the image tag.
     # Example tag: ${IMMICH_VERSION:-release}-cuda
-    image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION:-release}-cuda
-    extends:
+    image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION:-release}
+    # extends:
       # Uncomment this section for hardware acceleration - see:
       # https://immich.app/docs/features/ml-hardware-acceleration
-      file: hwaccel.ml.yml
-      service: cuda # set to one of [armnn, cuda, openvino, openvino-wsl]
+      # file: config/hwaccel.ml.yml
+      # service: cuda # set to one of [armnn, cuda, openvino, openvino-wsl]
       # For WSL2 use a `-wsl` variant where applicable
     volumes:
       - model-cache:/cache
@@ -281,29 +283,7 @@ services:
       # Do not edit the next line.
       # To change the database storage location, edit `DB_DATA_LOCATION` in `.env`
       - ${DB_DATA_LOCATION}:/var/lib/postgresql/data
-    healthcheck:
-      test: >
-        pg_isready --dbname='${DB_DATABASE_NAME}' --username='${DB_USERNAME}' || exit 1; Chksum="$$(psql --dbname='${DB_DATABASE_NAME}' \
-          --username='${DB_USERNAME}' --tuples-only --no-align \
-          --command='SELECT COALESCE(SUM(checksum_failures), 0) FROM pg_stat_database')";
-        echo "checksum failure count is $$Chksum"; [ "$$Chksum" = '0' ] || exit 1
-      interval: 5m
-      start_interval: 30s
-      start_period: 5m
-    command:
-      - "postgres"
-      - "-c"
-      - "shared_preload_libraries=vectors.so"
-      - "-c"
-      - 'search_path="$$user", public, vectors'
-      - "-c"
-      - "logging_collector=on"
-      - "-c"
-      - "max_wal_size=2GB"
-      - "-c"
-      - "shared_buffers=512MB"
-      - "-c"
-      - "wal_compression=on"
+    shm_size: 128mb
     restart: always
 
   actual_server:
@@ -312,7 +292,7 @@ services:
     ports:
       - '5006:5006'
     volumes:
-      - ./budget_data:/data
+      - ./data/budget:/data
     restart: always
 
   pinchflat:
@@ -334,9 +314,6 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=${TZ:-America/Chicago}
-      # NVIDIA GPU Settings
-      - NVIDIA_VISIBLE_DEVICES=all
-      - NVIDIA_DRIVER_CAPABILITIES=all
     volumes:
       - jellyfin_config:/config
       - jellyfin_cache:/cache
@@ -349,17 +326,38 @@ services:
       - ${other_shows}:/media/other_shows
       - ${pinchflat_downloads}:/pinchflat
       - ${home_movies}:/media/home_movies
+    devices:
+      - /dev/dri:/dev/dri
     ports:
       - 8096:8096
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: 1
-    #           capabilities: [ gpu ]
     restart: always
-    gpus: all
+
+  plex:
+    image: lscr.io/linuxserver/plex:latest
+    container_name: plex
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ:-America/Chicago}
+      - VERSION=docker
+      - PLEX_CLAIM=${plex_claim}
+    volumes:
+      - plex_data:/config
+      # Media Libraries
+      - ${movies}:/media/movies
+      - ${tv_shows}:/media/tv_shows
+      - ${kids_movies}:/media/kids_movies
+      - ${kids_tv_shows}:/media/kids_tv_shows
+      - ${other_movies}:/media/other_movies
+      - ${other_shows}:/media/other_shows
+      - ${music}:/media/music
+      - ${pinchflat_downloads}:/pinchflat
+      - ${home_movies}:/media/home_movies
+    devices:
+      - /dev/dri:/dev/dri
+    ports:
+      - 32400:32400
+    restart: always
   
   minecraft-survival:
     image: itzg/minecraft-bedrock-server:latest
@@ -377,7 +375,7 @@ services:
     # ports:
     #   - "19132:19132/udp"
     volumes:
-      - ./survival_data:/data
+      - ./data/survival:/data
     restart: unless-stopped
     stdin_open: true
     tty: true
@@ -399,10 +397,23 @@ services:
     # ports:
     #   - "19133:19132/udp"
     volumes:
-      - ./creative_data:/data
+      - ./data/creative:/data
     restart: unless-stopped
     stdin_open: true
     tty: true
+
+
+  homeassistant:
+    image: ghcr.io/home-assistant/home-assistant:stable
+    container_name: homeassistant
+    environment:
+      - TZ=${TZ:-America/Chicago}
+    network_mode: host
+    # ports:
+    #   - 8123:8123
+    volumes:
+      - homeassistant_data:/config
+    restart: always
 
 
   watchtower:
@@ -441,3 +452,5 @@ volumes:
   decluttarr_data:
   jellyfin_config:
   jellyfin_cache:
+  plex_data:
+  homeassistant_data:

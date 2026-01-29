@@ -1,22 +1,30 @@
-# Ignore backup volume archives
-vol_bkup/
-!vol_bkup/.gitkeep
-
-# Backups from `scripts/backup-volumes.ps1`
-# These are intentionally kept in the repo for now but should not be tracked by Git
-# (vol_bkup contains large tar.gz archives)
-vol_bkup/*.tar.gz
+# Secrets
 .env
 .env.linux
+
+# Logs
+*.log
+file.log
+
+# Backups and SQL Dumps
+vol_bkup/*
+!vol_bkup/.gitkeep
+*.sql.gz
 backup/
-pia-shared/
 scripts/backup/
+
+# Data Directories
+# Ignore all contents but keep the directory via .gitkeep
+data/**/*
+!data/**/.gitkeep
+
+# Legacy / Specific Data Ignores (mostly covered by data/ above)
+pia-shared/
+.pihole/
 immich
 pinchflat
 derbynet_data/
 budget_data/
-file.log
-.pihole/
 audiobookshelf_data/
 next_cloud_data/
 creative_data/

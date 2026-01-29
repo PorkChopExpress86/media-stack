@@ -1,0 +1,3 @@
+# Keep this directory in the repository while ignoring its contents.
+# The directory `vol_bkup/` is listed in .gitignore, so only this file will be tracked.
+# This file can be removed if you later want to stop tracking the empty folder.

@@ -3,8 +3,10 @@ PowerShell script to back up Docker volumes (gzipped tar archives).
 Creates archives in ../vol_bkup by default.
 
 Usage:
-  .\backup-volumes.ps1            # run backups
-  .\backup-volumes.ps1 -WhatIf    # preview only
+  .\backup-volumes.ps1                      # run backups
+  .\backup-volumes.ps1 -WhatIf              # preview only
+  .\backup-volumes.ps1 -ComposeVolumes      # back up all volumes from docker-compose.yaml
+  .\backup-volumes.ps1 -StopContainers      # stop containers during backup
   .\backup-volumes.ps1 -BackupDir "D:\backups" -WhatIf
 #>
 
@@ -39,26 +41,10 @@ catch {
 }
 
 # Define backups: container, archiveName, sourcePath
+# Note: It's recommended to use -ComposeVolumes flag to back up all named volumes from docker-compose.yaml
+# These container-based entries are kept for backwards compatibility and non-standard mounts
 $backups = @(
-    @{ container = 'nginx'; archive = 'mediaserver_nginx_data.tar.gz'; src = '/data' },
-    @{ container = 'nginx'; archive = 'mediaserver_letsencrypt.tar.gz'; src = '/etc/letsencrypt' },
-    @{ container = 'derbynet'; archive = 'derbynet_data.tar.gz'; src = '/var/lib/derbynet' },
-    @{ container = 'jellyfin'; archive = 'jellyfin_data.tar.gz'; src = '/config' },
-    @{ container = 'jellyfin'; archive = 'jellyfin_cache.tar.gz'; src = '/cache' },
-    @{ container = 'plex'; archive = 'plex_data.tar.gz'; src = '/config' },
-    @{ container = 'vpn'; archive = 'vpn_data.tar.gz'; src = '/pia' },
-    @{ container = 'vpn'; archive = 'gluetun_data.tar.gz'; src = '/gluetun' },
-    @{ container = 'prowlarr'; archive = 'mediaserver_prowlarr_data.tar.gz'; src = '/config' },
-    @{ container = 'radarr'; archive = 'mediaserver_radarr_data.tar.gz'; src = '/config' },
-    @{ container = 'sonarr'; archive = 'mediaserver_sonarr_data.tar.gz'; src = '/config' },
-    @{ container = 'lidarr'; archive = 'lidarr_data.tar.gz'; src = '/config' },
-    @{ container = 'readarr'; archive = 'readarr_data.tar.gz'; src = '/config' },
-    @{ container = 'bazarr'; archive = 'mediaserver_bazarr_data.tar.gz'; src = '/config' },
-    @{ container = 'qbittorrent'; archive = 'mediaserver_qbittorrent_data.tar.gz'; src = '/config' },
-    @{ container = 'audiobookshelf'; archive = 'audiobookshelf_data.tar.gz'; src = '/config' },
-    @{ container = 'immich_machine_learning'; archive = 'mediaserver_model-cache.tar.gz'; src = '/cache' },
-    @{ container = 'pinchflat'; archive = 'mediaserver_pinchflat_data.tar.gz'; src = '/config' },
-    @{ container = 'scrypted'; archive = 'scrypted_scrypted-data.tar.gz'; src = '/data' }
+    @{ container = 'derbynet'; archive = 'derbynet_data.tar.gz'; src = '/var/lib/derbynet' }
 )
 
 # Containers to stop during backup for consistency (adjust as you like)
@@ -218,7 +204,20 @@ if ($ComposeVolumes) {
     }
 }
 
-foreach ($item in $backups) {
+# Stop containers if requested for backup consistency
+if ($StopContainers) {
+    Write-Host "Stopping containers for backup consistency..."
+    foreach ($containerName in $ContainersToStop) {
+        Safe-StopContainer $containerName
+    }
+    if ($containersStopped.Count -gt 0) {
+        Write-Host "Stopped $($containersStopped.Count) container(s): $($containersStopped -join ', ')"
+    }
+}
+
+# Ensure containers are restarted even if script fails
+try {
+    foreach ($item in $backups) {
     $container = $item.container
     $archive = $item.archive
     $src = $item.src
@@ -287,3 +286,12 @@ foreach ($item in $backups) {
 }
 
 Write-Host "Backup completed. Archives stored in: $backupDirResolved"
+
+}
+finally {
+    # Restart any containers that were stopped
+    if ($StopContainers -and $containersStopped.Count -gt 0) {
+        Write-Host "`nRestarting stopped containers..."
+        Safe-RestartStopped
+    }
+}

@@ -1,63 +1,81 @@
 #!/bin/bash
 
-# Change to the docker folder # Update the path before doing this
-# cd /mnt/Samsung860/Docker/Faraday/docker-compose.yaml
+set -euo pipefail
 
-# pull down any updates for each of the containers
-# docker compose pull
+# Backup Docker volumes to timestamped directory
+# Creates compressed archives for all named volumes
 
-# # start up the containers
-# docker compose up -d
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+BACKUP_ROOT="${PROJECT_DIR}/vol_bkup"
+TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+BACKUP_DIR="${BACKUP_ROOT}/${TIMESTAMP}"
 
-# stop to containers, do not down them so there is still access to the volumes
-# docker compose stop
+echo "Creating backup directory: ${BACKUP_DIR}"
+mkdir -p "${BACKUP_DIR}"
 
-# nginx
-docker run --rm --volumes-from nginx -v ./backup:/backup ubuntu tar cvf /backup/nginx_data.tar -C /data .
-docker run --rm --volumes-from nginx -v ./backup:/backup ubuntu tar cvf /backup/letsencrypt.tar -C /etc/letsencrypt .
+backup_volume() {
+	local volume_name="$1"   # Docker volume name (e.g., media-stack_nginx_data)
+	local mount_path="$2"    # Path inside container where volume is mounted
+	local archive_name="$3"  # Backup filename
 
-# derbynet_data
-docker run --rm --volumes-from derbynet -v ./backup:/backup ubuntu tar cvf /backup/derbynet_data.tar -C /var/lib/derbynet .
+	if ! docker volume inspect "$volume_name" >/dev/null 2>&1; then
+		echo "[SKIP] Volume does not exist: $volume_name"
+		return 0
+	fi
 
-# Jellyfin
-docker run --rm --volumes-from jellyfin -v ./backup:/backup ubuntu tar cvf /backup/jellyfin_data.tar -C /config .
-docker run --rm --volumes-from jellyfin -v ./backup:/backup ubuntu tar cvf /backup/jellyfin_cache.tar -C /cache .
+	echo "[BACKUP] $volume_name -> $archive_name"
+	docker run --rm \
+		-v "$volume_name:$mount_path" \
+		-v "$BACKUP_DIR:/backup" \
+		ubuntu bash -c "cd '$mount_path' && tar czf '/backup/$archive_name' ."
+}
 
-# Plex
-docker run --rm --volumes-from plex -v ./backup:/backup ubuntu tar cvf ./backup/plex_data.tar -C /config .
+# nginx volumes
+backup_volume media-stack_nginx_data        /data            media-stack_nginx_data.tar.gz
+backup_volume media-stack_letsencrypt       /etc/letsencrypt media-stack_letsencrypt.tar.gz
 
-# vpn
-docker run --rm --volumes-from vpn -v ./backup:/backup ubuntu tar cvf /backup/vpn_data.tar -C /pia .
+# Jellyfin volumes
+backup_volume media-stack_jellyfin_config   /config          media-stack_jellyfin_config.tar.gz
+backup_volume media-stack_jellyfin_cache    /cache           media-stack_jellyfin_cache.tar.gz
 
-# # gluetun
-docker run --rm --volumes-from vpn -v ./backup:/backup ubuntu tar cvf /backup/gluetun_data.tar -C /gluetun .
+# Plex volume
+backup_volume media-stack_plex_data         /config          media-stack_plex_data.tar.gz
 
-# Prowlarr
-docker run --rm --volumes-from prowlarr -v ./backup:/backup ubuntu tar cvf /backup/prowlarr_data.tar -C /config .
+# gluetun (vpn) volume
+backup_volume media-stack_gluetun_data      /gluetun         media-stack_gluetun_data.tar.gz
 
-# radarr
-docker run --rm --volumes-from radarr -v ./backup:/backup ubuntu tar cvf /backup/radarr_data.tar -C /config .
-
-# sonarr
-docker run --rm --volumes-from sonarr -v ./backup:/backup ubuntu tar cvf /backup/sonarr_data.tar -C /config .
-
-# lidarr
-docker run --rm --volumes-from lidarr -v ./backup:/backup ubuntu tar cvf /backup/lidarr_data.tar -C /config .
-
-# readarr
-docker run --rm --volumes-from readarr -v ./backup:/backup ubuntu tar cvf /backup/readarr_data.tar -C /config .
-
-# bazarr
-docker run --rm --volumes-from bazarr -v ./backup:/backup ubuntu tar cvf /backup/bazarr_data.tar -C /config .
+# *ARR services
+backup_volume media-stack_prowlarr_data     /config          media-stack_prowlarr_data.tar.gz
+backup_volume media-stack_radarr_data       /config          media-stack_radarr_data.tar.gz
+backup_volume media-stack_sonarr_data       /config          media-stack_sonarr_data.tar.gz
+backup_volume media-stack_bazarr_data       /config          media-stack_bazarr_data.tar.gz
 
 # qbittorrent
-docker run --rm --volumes-from qbittorrent -v ./backup:/backup ubuntu tar cvf /backup/qbittorrent_data.tar -C /config .
+backup_volume media-stack_qbittorrent_data  /config          media-stack_qbittorrent_data.tar.gz
+
+# decluttarr
+backup_volume media-stack_decluttarr_data   /config          media-stack_decluttarr_data.tar.gz
 
 # Audiobookshelf
-docker run --rm --volumes-from sonarr -v ./backup:/backup ubuntu tar cvf /backup/sonarr_data.tar -C /config .
+backup_volume media-stack_audiobookshelf_data /config        media-stack_audiobookshelf_data.tar.gz
 
-# Immich-machine-learning
-docker run --rm --volumes-from immich_machine_learning -v ./backup:/backup ubuntu tar cvf /backup/model-cache.tar -C /cache .
+# Pinchflat
+backup_volume media-stack_pinchflat_data    /config          media-stack_pinchflat_data.tar.gz
 
-# Start it all back up using the powershell script
-# docker compose up -d
+# Immich volumes
+backup_volume media-stack_model-cache       /cache           media-stack_model-cache.tar.gz
+backup_volume media-stack_immich_redis_data /data            media-stack_immich_redis_data.tar.gz
+backup_volume media-stack_immich_server_data /data           media-stack_immich_server_data.tar.gz
+
+# Home Assistant
+backup_volume media-stack_homeassistant_data /config         media-stack_homeassistant_data.tar.gz
+
+# Watchtower
+backup_volume media-stack_watchtower_data   /data            media-stack_watchtower_data.tar.gz
+
+echo ""
+echo "Backup completed successfully!"
+echo "Location: ${BACKUP_DIR}"
+echo ""
+echo "To restore these backups, run: ./scripts/restore-volumes.sh ${TIMESTAMP}"
