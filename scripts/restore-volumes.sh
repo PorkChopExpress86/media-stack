@@ -127,8 +127,8 @@ restore_volume() {
 # restore_volume media-stack_letsencrypt       /etc/letsencrypt letsencrypt.tar.gz
 
 # Jellyfin volumes
-# restore_volume media-stack_jellyfin_config   /config          jellyfin_config.tar.gz
-# restore_volume media-stack_jellyfin_cache    /cache           jellyfin_cache.tar.gz
+restore_volume media-stack_jellyfin_config   /config          jellyfin_config.tar.gz
+restore_volume media-stack_jellyfin_cache    /cache           jellyfin_cache.tar.gz
 
 # Plex volume
 # restore_volume media-stack_plex_data         /config          plex_data.tar.gz
