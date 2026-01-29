@@ -17,7 +17,7 @@ This guide will help you restore your Immich database and files from your Window
 Since you mentioned you've already migrated the files and taken ownership, you likely only need to restore the database:
 
 ```bash
-cd /home/specter/Docker/MediaServer/scripts
+cd /home/specter/Docker/MediaServer/scripts/linux
 ./restore-immich-linux.sh /home/specter/Docker/MediaServer/immich-db-backup-20260124T020000-v2.4.1-pg14.19.sql
 ```
 
@@ -26,7 +26,7 @@ cd /home/specter/Docker/MediaServer/scripts
 If you need to restore both database and upload files:
 
 ```bash
-cd /home/specter/Docker/MediaServer/scripts
+cd /home/specter/Docker/MediaServer/scripts/linux
 ./restore-immich-linux.sh /home/specter/Docker/MediaServer/immich-db-backup-20260124T020000-v2.4.1-pg14.19.sql /path/to/upload/backup
 ```
 
@@ -85,8 +85,8 @@ ls -la /media/specter/immich/Immich/upload/
 ### 2. Run the Restore Script
 
 ```bash
-cd /home/specter/Docker/MediaServer/scripts
-./restore-immich-linux.sh ../immich-db-backup-20260124T020000-v2.4.1-pg14.19.sql
+cd /home/specter/Docker/MediaServer/scripts/linux
+./restore-immich-linux.sh ../../immich-db-backup-20260124T020000-v2.4.1-pg14.19.sql
 ```
 
 The script will:
@@ -221,7 +221,7 @@ Now that you're on Linux, consider setting up automated backups:
 
 ```bash
 # Database backup
-cd /home/specter/Docker/MediaServer/scripts
+cd /home/specter/Docker/MediaServer/scripts/linux
 ./backup-volumes.sh
 ```
 
@@ -232,7 +232,7 @@ cd /home/specter/Docker/MediaServer/scripts
 crontab -e
 
 # Add daily backup at 2 AM
-0 2 * * * /home/specter/Docker/MediaServer/scripts/backup-volumes.sh
+0 2 * * * /home/specter/Docker/MediaServer/scripts/linux/backup-volumes.sh
 ```
 
 ### Option 3: Use Immich's Built-in Backup
@@ -256,7 +256,7 @@ Configure in: Administration → Settings → Backup Settings
 cd /home/specter/Docker/MediaServer
 
 # Run restore (database only)
-./scripts/restore-immich-linux.sh immich-db-backup-20260124T020000-v2.4.1-pg14.19.sql
+./scripts/linux/restore-immich-linux.sh immich-db-backup-20260124T020000-v2.4.1-pg14.19.sql
 
 # Check container status
 docker compose ps

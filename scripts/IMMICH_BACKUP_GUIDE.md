@@ -40,7 +40,7 @@ Based on [Immich's official backup documentation](https://docs.immich.app/admini
 
 ```powershell
 # Basic usage (default paths from your docker-compose)
-.\scripts\backup-immich.ps1
+.\scripts\windows\backup-immich.ps1
 
 # Custom paths
 .\scripts\backup-immich.ps1 `
@@ -50,7 +50,7 @@ Based on [Immich's official backup documentation](https://docs.immich.app/admini
     -DatabaseUsername "postgres"
 
 # Stop server during backup for consistency (recommended)
-.\scripts\backup-immich.ps1 -StopServer $true
+.\scripts\windows\backup-immich.ps1 -StopServer $true
 ```
 
 ### What It Does
@@ -118,7 +118,7 @@ Before running the restore:
 chmod +x restore-immich.sh
 
 # Run restore
-sudo ./restore-immich.sh /path/to/immich_backup_2026-01-23_174752
+sudo ./scripts/linux/restore-immich.sh /path/to/immich_backup_2026-01-23_174752
 ```
 
 ### What It Does
@@ -249,12 +249,12 @@ Check that paths don't have trailing slashes and exist:
 ```powershell
 # Windows Task Scheduler - Weekly backup
 # Create scheduled task that runs:
-powershell.exe -ExecutionPolicy Bypass -File "C:\Users\Blake\Docker\MediaServer\scripts\backup-immich.ps1" -StopServer $true
+powershell.exe -ExecutionPolicy Bypass -File "C:\Users\Blake\Docker\MediaServer\scripts\windows\backup-immich.ps1" -StopServer $true
 ```
 
 ```bash
 # Linux cron - Weekly backup (after migration)
-0 2 * * 0 /opt/immich/scripts/backup-immich.sh > /var/log/immich-backup.log 2>&1
+0 2 * * 0 /opt/immich/scripts/linux/backup-volumes.sh > /var/log/immich-backup.log 2>&1
 ```
 
 ## 📚 References
