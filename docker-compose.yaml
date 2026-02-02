@@ -19,7 +19,7 @@ services:
 
   derbynet:
     container_name: derbynet
-    image: jeffpiazza/derbynet_server:v10.0
+    image: jeffpiazza/derbynet_server:amd64
     ports:
       - 8050:80
     volumes:
@@ -249,11 +249,11 @@ services:
     # Example tag: ${IMMICH_VERSION:-release}-cuda
     image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION:-release}
     # extends:
-      # Uncomment this section for hardware acceleration - see:
-      # https://immich.app/docs/features/ml-hardware-acceleration
-      # file: config/hwaccel.ml.yml
-      # service: cuda # set to one of [armnn, cuda, openvino, openvino-wsl]
-      # For WSL2 use a `-wsl` variant where applicable
+    # Uncomment this section for hardware acceleration - see:
+    # https://immich.app/docs/features/ml-hardware-acceleration
+    # file: config/hwaccel.ml.yml
+    # service: cuda # set to one of [armnn, cuda, openvino, openvino-wsl]
+    # For WSL2 use a `-wsl` variant where applicable
     volumes:
       - model-cache:/cache
     env_file:
@@ -309,11 +309,14 @@ services:
 
   jellyfin:
     image: jellyfin/jellyfin:latest
+    user: "1000:1000"
     container_name: jellyfin
     environment:
-      - PUID=1000
-      - PGID=1000
       - TZ=${TZ:-America/Chicago}
+      - JELLYFIN_PublishedServerUrl=${jellyfin_url}
+    group_add:
+      - "992"
+      - "44"
     volumes:
       - jellyfin_config:/config
       - jellyfin_cache:/cache
@@ -329,8 +332,9 @@ services:
     devices:
       - /dev/dri:/dev/dri
     ports:
-      - 8096:8096
-    restart: always
+      - 8096:8096/tcp
+      - 7359:7359/udp
+    restart: 'unless-stopped'
 
   plex:
     image: lscr.io/linuxserver/plex:latest
@@ -358,7 +362,7 @@ services:
     ports:
       - 32400:32400
     restart: always
-  
+
   minecraft-survival:
     image: itzg/minecraft-bedrock-server:latest
     container_name: minecraft-survival
@@ -402,7 +406,6 @@ services:
     stdin_open: true
     tty: true
 
-
   homeassistant:
     image: ghcr.io/home-assistant/home-assistant:stable
     container_name: homeassistant
@@ -414,7 +417,6 @@ services:
     volumes:
       - homeassistant_data:/config
     restart: always
-
 
   watchtower:
     image: containrrr/watchtower:1.7.1
@@ -432,6 +434,124 @@ services:
       - WATCHTOWER_NOTIFICATION_EMAIL_DELAY=2
       - DOCKER_API_VERSION=1.52
     command: --cleanup --interval 21600
+
+  ######### MONITORING STACK #########################################################
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    ports:
+      - 9090:9090
+    volumes:
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    restart: always
+    environment:
+      - TZ=${TZ:-America/Chicago}
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - 3000:3000
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./config/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+      - TZ=${TZ:-America/Chicago}
+    restart: always
+    depends_on:
+      - prometheus
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    privileged: true
+    devices:
+      - /dev/kmsg:/dev/kmsg
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    restart: always
+    command:
+      - '--allow_dynamic_housekeeping=false'
+      - '--housekeeping_interval=30s'
+      - '--docker_only=true'
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    command:
+      - '--path.rootfs=/host'
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    volumes:
+      - /:/host:ro,rslave
+    restart: always
+    pid: host
+
+  sonarr-exporter:
+    image: ghcr.io/onedr0p/exportarr:latest
+    container_name: sonarr-exporter
+    command: [ "sonarr" ]
+    environment:
+      PORT: 9707
+      URL: "http://vpn:8989"
+      APIKEY: "${SONARR_API_KEY}"
+      ENABLE_ADDITIONAL_METRICS: true
+      ENABLE_UNKNOWN_QUEUE_ITEMS: false
+    ports:
+      - 9707:9707
+    restart: always
+    depends_on:
+      - vpn
+
+  radarr-exporter:
+    image: ghcr.io/onedr0p/exportarr:latest
+    container_name: radarr-exporter
+    command: [ "radarr" ]
+    environment:
+      PORT: 9708
+      URL: "http://vpn:7878"
+      APIKEY: "${RADARR_API_KEY}"
+      ENABLE_ADDITIONAL_METRICS: true
+      ENABLE_UNKNOWN_QUEUE_ITEMS: false
+    ports:
+      - 9708:9708
+    restart: always
+    depends_on:
+      - vpn
+
+  prowlarr-exporter:
+    image: ghcr.io/onedr0p/exportarr:latest
+    container_name: prowlarr-exporter
+    command: [ "prowlarr" ]
+    environment:
+      PORT: 9709
+      URL: "http://vpn:9696"
+      APIKEY: "${PROWLARR_API_KEY}"
+      ENABLE_ADDITIONAL_METRICS: true
+    ports:
+      - 9709:9709
+    restart: always
+    depends_on:
+      - vpn
 
 volumes:
   nginx_data:
@@ -454,3 +574,5 @@ volumes:
   jellyfin_cache:
   plex_data:
   homeassistant_data:
+  prometheus_data:
+  grafana_data:
