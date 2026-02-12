@@ -65,10 +65,12 @@ sudo chown -R 1000:1000 /media/specter/immich/Immich/upload
 ### Your Current Configuration
 
 From your `.env` file:
-- Upload Location: `/media/specter/immich/Immich/upload`
-- Database Location: `/media/specter/immich/Immich/postgres`
-- Database Password: `literal:REDACTED_DB_PASSWORD`
-- Immich Version: `release` (latest)
+- Upload Location: check `UPLOAD_LOCATION` in your `.env`
+- Database Location: check `DB_DATA_LOCATION` in your `.env`
+- Database Password: check `DB_PASSWORD` in your `.env`
+- Immich Version: check `IMMICH_VERSION` in your `.env`
+
+> **Note:** Never commit credentials to version control. All sensitive values should only exist in your `.env` file.
 
 ## Step-by-Step Process
 
