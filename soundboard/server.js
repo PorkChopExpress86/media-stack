@@ -2,6 +2,7 @@
 
 const express = require('express');
 const multer = require('multer');
+const rateLimit = require('express-rate-limit');
 const path = require('path');
 const fs = require('fs');
 
@@ -60,8 +61,13 @@ const upload = multer({ storage, fileFilter, limits: { fileSize: MAX_FILE_SIZE }
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Rate limiters
+const readLimiter = rateLimit({ windowMs: 60_000, max: 120, standardHeaders: true, legacyHeaders: false });
+const uploadLimiter = rateLimit({ windowMs: 60_000, max: 30, standardHeaders: true, legacyHeaders: false });
+const writeLimiter = rateLimit({ windowMs: 60_000, max: 60, standardHeaders: true, legacyHeaders: false });
+
 // Serve uploaded sound files
-app.use('/sounds', (req, res, next) => {
+app.use('/sounds', readLimiter, (req, res, next) => {
   // Only allow simple filenames — no path traversal
   const name = path.basename(req.path);
   if (name !== req.path.replace(/^\//, '')) {
@@ -77,7 +83,7 @@ app.use('/sounds', (req, res, next) => {
 // --- API routes ---
 
 // List all uploaded sound files
-app.get('/api/sounds', (_req, res) => {
+app.get('/api/sounds', readLimiter, (_req, res) => {
   const files = fs.readdirSync(SOUNDS_DIR).filter((f) => {
     const ext = path.extname(f).toLowerCase();
     return ALLOWED_EXTENSIONS.has(ext);
@@ -86,7 +92,7 @@ app.get('/api/sounds', (_req, res) => {
 });
 
 // Upload one or more sound files
-app.post('/api/upload', upload.array('sounds', 20), (req, res) => {
+app.post('/api/upload', uploadLimiter, upload.array('sounds', 20), (req, res) => {
   if (!req.files || req.files.length === 0) {
     return res.status(400).json({ error: 'No files uploaded' });
   }
@@ -95,7 +101,7 @@ app.post('/api/upload', upload.array('sounds', 20), (req, res) => {
 });
 
 // Delete a sound file (and remove from any button that references it)
-app.delete('/api/sounds/:filename', (req, res) => {
+app.delete('/api/sounds/:filename', writeLimiter, (req, res) => {
   const name = path.basename(req.params.filename);
   const filePath = path.join(SOUNDS_DIR, name);
   if (!fs.existsSync(filePath)) {
@@ -114,12 +120,12 @@ app.delete('/api/sounds/:filename', (req, res) => {
 });
 
 // Get button configuration
-app.get('/api/buttons', (_req, res) => {
+app.get('/api/buttons', readLimiter, (_req, res) => {
   res.json(readButtons());
 });
 
 // Save button configuration
-app.post('/api/buttons', (req, res) => {
+app.post('/api/buttons', writeLimiter, (req, res) => {
   const buttons = req.body;
   if (!Array.isArray(buttons)) {
     return res.status(400).json({ error: 'Expected an array of button configs' });
