@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Upload Sounds — Soundboard</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1><span>🔊</span> Soundboard</h1>
+      <nav>
+        <a href="/">Soundboard</a>
+        <a href="/upload.html">Upload</a>
+        <a href="/customize.html">Customize</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <h2 class="page-title">Upload Sounds</h2>
+
+      <!-- Drop zone -->
+      <div id="drop-zone" class="drop-zone card">
+        <div class="drop-icon">🎵</div>
+        <strong>Drop audio files here</strong>
+        <p>or <strong>click to browse</strong></p>
+        <p>Supported formats: MP3, WAV, OGG, FLAC, AAC, M4A, WEBM &nbsp;·&nbsp; Max 50 MB per file</p>
+        <input id="file-input" type="file" accept=".mp3,.wav,.ogg,.flac,.aac,.m4a,.webm" multiple />
+      </div>
+
+      <!-- Upload progress -->
+      <div id="upload-status" style="margin-top:1rem;"></div>
+
+      <!-- Sound library -->
+      <div style="margin-top:2rem;">
+        <div class="actions-bar">
+          <h3 style="flex:1">Sound Library</h3>
+          <button class="btn btn-ghost" id="refresh-btn" title="Refresh list">↻ Refresh</button>
+        </div>
+        <div id="sound-list" class="sound-list"></div>
+        <div id="empty-sounds" class="empty-state" style="display:none">
+          <div class="empty-icon">📂</div>
+          <p>No sounds uploaded yet.</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="toast"></div>
+
+  <script src="/app.js"></script>
+  <script>
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const statusEl = document.getElementById('upload-status');
+
+    // Click to open file picker
+    dropZone.addEventListener('click', () => fileInput.click());
+
+    // Drag & drop
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      handleFiles(e.dataTransfer.files);
+    });
+
+    fileInput.addEventListener('change', () => handleFiles(fileInput.files));
+
+    async function handleFiles(fileList) {
+      if (!fileList || fileList.length === 0) return;
+      statusEl.textContent = 'Uploading…';
+
+      const form = new FormData();
+      for (const f of fileList) form.append('sounds', f);
+
+      try {
+        const data = await apiFetch('/api/upload', { method: 'POST', body: form });
+        showToast(`Uploaded ${data.uploaded.length} file(s)`, 'success');
+        statusEl.textContent = '';
+        fileInput.value = '';
+        loadSounds();
+      } catch (err) {
+        showToast(err.message, 'error');
+        statusEl.textContent = '';
+      }
+    }
+
+    async function loadSounds() {
+      const list = document.getElementById('sound-list');
+      const empty = document.getElementById('empty-sounds');
+      list.innerHTML = '';
+
+      let sounds = [];
+      try { sounds = await apiFetch('/api/sounds'); } catch { /* ignore */ }
+
+      if (sounds.length === 0) {
+        empty.style.display = '';
+        return;
+      }
+      empty.style.display = 'none';
+
+      sounds.forEach((name) => {
+        const item = document.createElement('div');
+        item.className = 'sound-item';
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'sound-name';
+        nameSpan.title = name;
+        nameSpan.textContent = name;
+
+        const playBtn = document.createElement('button');
+        playBtn.className = 'btn btn-ghost';
+        playBtn.textContent = '▶ Play';
+        playBtn.addEventListener('click', () => previewSound(name));
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'btn btn-danger';
+        delBtn.textContent = '🗑';
+        delBtn.addEventListener('click', () => deleteSound(name));
+
+        item.appendChild(document.createTextNode('🎵 '));
+        item.appendChild(nameSpan);
+        item.appendChild(playBtn);
+        item.appendChild(delBtn);
+        list.appendChild(item);
+      });
+    }
+
+    let previewAudio = null;
+
+    function previewSound(name) {
+      if (previewAudio) { previewAudio.pause(); previewAudio.currentTime = 0; }
+      previewAudio = new Audio(`/sounds/${encodeURIComponent(name)}`);
+      previewAudio.play().catch((e) => showToast(e.message, 'error'));
+    }
+
+    async function deleteSound(name) {
+      if (!confirm(`Delete "${name}"?`)) return;
+      try {
+        await apiFetch(`/api/sounds/${encodeURIComponent(name)}`, { method: 'DELETE' });
+        showToast(`Deleted ${name}`, 'success');
+        loadSounds();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    document.getElementById('refresh-btn').addEventListener('click', loadSounds);
+
+    loadSounds();
+  </script>
+</body>
+</html>

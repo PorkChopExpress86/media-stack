@@ -337,6 +337,26 @@ services:
       retries: 5
       start_period: 30s
 
+  soundboard:
+    build: ./soundboard
+    container_name: soundboard
+    ports:
+      - 8055:8055
+    volumes:
+      - soundboard_data:/data
+    environment:
+      - SOUNDS_DIR=/data/sounds
+      - CONFIG_DIR=/data/config
+      - TZ=${TZ:-America/Chicago}
+    restart: always
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8055/api/sounds"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
   actual_server:
     container_name: actual_server
     image: docker.io/actualbudget/actual-server:latest
@@ -621,6 +641,7 @@ services:
         condition: service_healthy
 
 volumes:
+  soundboard_data:
   nginx_data:
   letsencrypt:
   prowlarr_data:
