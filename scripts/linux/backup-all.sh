@@ -21,10 +21,28 @@ MAX_BACKUPS=14
 # Load .env for DB credentials and bind-mount paths
 ENV_FILE="${PROJECT_DIR}/.env"
 if [[ -f "$ENV_FILE" ]]; then
-    set -a
-    # shellcheck disable=SC1090
-    source "$ENV_FILE"
-    set +a
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        line="${line%$'\r'}"
+
+        # Skip blank lines and full-line comments
+        [[ -z "${line//[[:space:]]/}" ]] && continue
+        [[ "$line" =~ ^[[:space:]]*# ]] && continue
+
+        # Parse KEY=VALUE entries without executing shell code
+        if [[ "$line" =~ ^[[:space:]]*([A-Za-z_][A-Za-z0-9_]*)=(.*)$ ]]; then
+            key="${BASH_REMATCH[1]}"
+            value="${BASH_REMATCH[2]}"
+
+            # Strip optional surrounding quotes
+            if [[ "$value" =~ ^\"(.*)\"$ ]]; then
+                value="${BASH_REMATCH[1]}"
+            elif [[ "$value" =~ ^\'(.*)\'$ ]]; then
+                value="${BASH_REMATCH[1]}"
+            fi
+
+            export "$key=$value"
+        fi
+    done < "$ENV_FILE"
 else
     echo "ERROR: .env file not found at $ENV_FILE"
     exit 1
@@ -75,11 +93,9 @@ ERRORS=0
 log "--- Phase 1: Named Docker volumes ---"
 
 cd "$COMPOSE_DIR"
-PROJECT_NAME=$(docker compose ls --format json 2>/dev/null | grep -oP '"Name":"\K[^"]+' | head -1 || true)
-if [[ -z "$PROJECT_NAME" ]]; then
-    # Fallback: use COMPOSE_PROJECT_NAME from env
-    PROJECT_NAME="${COMPOSE_PROJECT_NAME:-media-stack}"
-fi
+# Always prefer this stack's project name from .env to avoid matching
+# unrelated compose projects that may also be running on the same host.
+PROJECT_NAME="${COMPOSE_PROJECT_NAME:-media-stack}"
 log "Project name: $PROJECT_NAME"
 
 VOL_KEYS=$(docker compose config --volumes 2>/dev/null || true)
