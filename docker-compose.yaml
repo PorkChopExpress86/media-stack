@@ -258,6 +258,19 @@ services:
     restart: always
     logging: *default-logging
 
+  # open-webui:
+  #   image: ghcr.io/open-webui/open-webui:main
+  #   container_name: open-webui
+  #   network_mode: host
+  #   volumes:
+  #     - open-webui_data:/app/backend/data
+  #   environment:
+  #     - TZ=${TZ:-America/Chicago}
+  #     - PORT=3001
+  #     - OLLAMA_BASE_URL=http://127.0.0.1:11434
+  #   restart: always
+  #   logging: *default-logging
+
   # IMMICH SERVER
   immich-server:
     container_name: immich_server
@@ -503,124 +516,124 @@ services:
     command: --cleanup --interval 21600
 
   ######### MONITORING STACK #########################################################
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--storage.tsdb.retention.time=15d'
-      - '--web.console.libraries=/etc/prometheus/console_libraries'
-      - '--web.console.templates=/etc/prometheus/consoles'
-      - '--web.enable-lifecycle'
-    volumes:
-      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus_data:/prometheus
-    restart: always
-    logging: *default-logging
-    environment:
-      - TZ=${TZ:-America/Chicago}
+  # prometheus:
+  #   image: prom/prometheus:latest
+  #   container_name: prometheus
+  #   command:
+  #     - '--config.file=/etc/prometheus/prometheus.yml'
+  #     - '--storage.tsdb.path=/prometheus'
+  #     - '--storage.tsdb.retention.time=15d'
+  #     - '--web.console.libraries=/etc/prometheus/console_libraries'
+  #     - '--web.console.templates=/etc/prometheus/consoles'
+  #     - '--web.enable-lifecycle'
+  #   volumes:
+  #     - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+  #     - prometheus_data:/prometheus
+  #   restart: always
+  #   logging: *default-logging
+  #   environment:
+  #     - TZ=${TZ:-America/Chicago}
 
-  grafana:
-    image: grafana/grafana:latest
-    container_name: grafana
-    ports:
-      - 3000:3000
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
-      - ./config/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
-    environment:
-      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
-      - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_AUTH_ANONYMOUS_ENABLED=false
-      - TZ=${TZ:-America/Chicago}
-    restart: always
-    logging: *default-logging
-    depends_on:
-      - prometheus
+  # grafana:
+  #   image: grafana/grafana:latest
+  #   container_name: grafana
+  #   ports:
+  #     - 3000:3000
+  #   volumes:
+  #     - grafana_data:/var/lib/grafana
+  #     - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
+  #     - ./config/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+  #   environment:
+  #     - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+  #     - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+  #     - GF_USERS_ALLOW_SIGN_UP=false
+  #     - GF_AUTH_ANONYMOUS_ENABLED=false
+  #     - TZ=${TZ:-America/Chicago}
+  #   restart: always
+  #   logging: *default-logging
+  #   depends_on:
+  #     - prometheus
 
-  cadvisor:
-    image: gcr.io/cadvisor/cadvisor:latest
-    container_name: cadvisor
-    devices:
-      - /dev/kmsg:/dev/kmsg
-    security_opt:
-      - no-new-privileges:true
-    volumes:
-      - /:/rootfs:ro
-      - /var/run:/var/run:ro
-      - /sys:/sys:ro
-      - /var/lib/docker/:/var/lib/docker:ro
-      - /dev/disk/:/dev/disk:ro
-    restart: always
-    logging: *default-logging
-    command:
-      - '--allow_dynamic_housekeeping=false'
-      - '--housekeeping_interval=30s'
-      - '--docker_only=true'
+  # cadvisor:
+  #   image: gcr.io/cadvisor/cadvisor:latest
+  #   container_name: cadvisor
+  #   devices:
+  #     - /dev/kmsg:/dev/kmsg
+  #   security_opt:
+  #     - no-new-privileges:true
+  #   volumes:
+  #     - /:/rootfs:ro
+  #     - /var/run:/var/run:ro
+  #     - /sys:/sys:ro
+  #     - /var/lib/docker/:/var/lib/docker:ro
+  #     - /dev/disk/:/dev/disk:ro
+  #   restart: always
+  #   logging: *default-logging
+  #   command:
+  #     - '--allow_dynamic_housekeeping=false'
+  #     - '--housekeeping_interval=30s'
+  #     - '--docker_only=true'
 
-  node-exporter:
-    image: prom/node-exporter:latest
-    container_name: node-exporter
-    command:
-      - '--path.rootfs=/host'
-      - '--path.procfs=/host/proc'
-      - '--path.sysfs=/host/sys'
-      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
-    volumes:
-      - /:/host:ro,rslave
-    restart: always
-    logging: *default-logging
-    pid: host
+  # node-exporter:
+  #   image: prom/node-exporter:latest
+  #   container_name: node-exporter
+  #   command:
+  #     - '--path.rootfs=/host'
+  #     - '--path.procfs=/host/proc'
+  #     - '--path.sysfs=/host/sys'
+  #     - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+  #   volumes:
+  #     - /:/host:ro,rslave
+  #   restart: always
+  #   logging: *default-logging
+  #   pid: host
 
-  sonarr-exporter:
-    image: ghcr.io/onedr0p/exportarr:latest
-    container_name: sonarr-exporter
-    command: [ "sonarr" ]
-    environment:
-      PORT: 9707
-      URL: "http://vpn:8989"
-      APIKEY: "${SONARR_API_KEY}"
-      ENABLE_ADDITIONAL_METRICS: true
-      ENABLE_UNKNOWN_QUEUE_ITEMS: false
-    restart: always
-    logging: *default-logging
-    depends_on:
-      vpn:
-        condition: service_healthy
+  # sonarr-exporter:
+  #   image: ghcr.io/onedr0p/exportarr:latest
+  #   container_name: sonarr-exporter
+  #   command: [ "sonarr" ]
+  #   environment:
+  #     PORT: 9707
+  #     URL: "http://vpn:8989"
+  #     APIKEY: "${SONARR_API_KEY}"
+  #     ENABLE_ADDITIONAL_METRICS: true
+  #     ENABLE_UNKNOWN_QUEUE_ITEMS: false
+  #   restart: always
+  #   logging: *default-logging
+  #   depends_on:
+  #     vpn:
+  #       condition: service_healthy
 
-  radarr-exporter:
-    image: ghcr.io/onedr0p/exportarr:latest
-    container_name: radarr-exporter
-    command: [ "radarr" ]
-    environment:
-      PORT: 9708
-      URL: "http://vpn:7878"
-      APIKEY: "${RADARR_API_KEY}"
-      ENABLE_ADDITIONAL_METRICS: true
-      ENABLE_UNKNOWN_QUEUE_ITEMS: false
-    restart: always
-    logging: *default-logging
-    depends_on:
-      vpn:
-        condition: service_healthy
+  # radarr-exporter:
+  #   image: ghcr.io/onedr0p/exportarr:latest
+  #   container_name: radarr-exporter
+  #   command: [ "radarr" ]
+  #   environment:
+  #     PORT: 9708
+  #     URL: "http://vpn:7878"
+  #     APIKEY: "${RADARR_API_KEY}"
+  #     ENABLE_ADDITIONAL_METRICS: true
+  #     ENABLE_UNKNOWN_QUEUE_ITEMS: false
+  #   restart: always
+  #   logging: *default-logging
+  #   depends_on:
+  #     vpn:
+  #       condition: service_healthy
 
-  prowlarr-exporter:
-    image: ghcr.io/onedr0p/exportarr:latest
-    container_name: prowlarr-exporter
-    command: [ "prowlarr" ]
-    environment:
-      PORT: 9709
-      URL: "http://vpn:9696"
-      APIKEY: "${PROWLARR_API_KEY}"
-      ENABLE_ADDITIONAL_METRICS: true
-    restart: always
-    logging: *default-logging
-    depends_on:
-      vpn:
-        condition: service_healthy
+  # prowlarr-exporter:
+  #   image: ghcr.io/onedr0p/exportarr:latest
+  #   container_name: prowlarr-exporter
+  #   command: [ "prowlarr" ]
+  #   environment:
+  #     PORT: 9709
+  #     URL: "http://vpn:9696"
+  #     APIKEY: "${PROWLARR_API_KEY}"
+  #     ENABLE_ADDITIONAL_METRICS: true
+  #   restart: always
+  #   logging: *default-logging
+  #   depends_on:
+  #     vpn:
+  #       condition: service_healthy
 
 volumes:
   nginx_data:
@@ -643,3 +656,4 @@ volumes:
   homeassistant_data:
   prometheus_data:
   grafana_data:
+  open-webui_data:
