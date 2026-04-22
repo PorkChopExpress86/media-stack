@@ -149,6 +149,11 @@ Troubleshooting:
 
 - The container shares Gluetun's network namespace with the *arr stack using `network_mode: "service:vpn"`.
 - In Prowlarr, set **Settings → Indexers → FlareSolverr URL** to `http://127.0.0.1:8191`.
+- FlareSolverr-compatible indexers (auto-routed when tagged):
+	- `1337x` (definition: `1337x`)
+	- `EZTV` (definition: `eztv`)
+	- `kickasstorrents.ws` (definition: `kickasstorrents-ws`)
+- After enabling any FlareSolverr-protected indexer, run **Test** from Prowlarr to confirm connectivity.
 - If FlareSolverr or Gluetun is restarted, Prowlarr may need a quick re-test on affected indexers.
 
 ## 🗂️ Project Layout
