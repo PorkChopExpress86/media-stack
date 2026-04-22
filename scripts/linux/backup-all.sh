@@ -8,7 +8,7 @@ set -euo pipefail
 #   0 3 * * 0 /mnt/samsung/Docker/MediaServer/scripts/linux/backup-all.sh \
 #     >> /mnt/samsung/Docker/MediaServer/vol_bkup/backup.log 2>&1
 #
-# Retains the most recent MAX_BACKUPS backup sets and deletes older ones.
+# Retains the most recent MAX_BACKUPS weekly backup sets and deletes older ones.
 # =============================================================================
 
 # --- Configuration -----------------------------------------------------------
@@ -16,7 +16,12 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 BKUP_BASE_DIR="${PROJECT_DIR}/vol_bkup"
 COMPOSE_DIR="$PROJECT_DIR"
-MAX_BACKUPS=14
+# Weekly backups are scheduled on Sundays; keep 3 sets (~3 weeks).
+MAX_BACKUPS=3
+# Compression level used by gzip/pigz (1=fastest, 9=smallest).
+BACKUP_GZIP_LEVEL="${BACKUP_GZIP_LEVEL:-6}"
+# Compression program preference: auto, pigz, or gzip.
+BACKUP_COMPRESSOR="${BACKUP_COMPRESSOR:-auto}"
 
 # Load .env for DB credentials and bind-mount paths
 ENV_FILE="${PROJECT_DIR}/.env"
@@ -53,6 +58,26 @@ log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"
 }
 
+format_duration() {
+    local total_seconds="$1"
+    local hours=$((total_seconds / 3600))
+    local minutes=$(((total_seconds % 3600) / 60))
+    local seconds=$((total_seconds % 60))
+    printf "%02dh:%02dm:%02ds" "$hours" "$minutes" "$seconds"
+}
+
+calc_throughput_mb_s() {
+    local bytes="$1"
+    local duration_seconds="$2"
+
+    if [[ "$duration_seconds" -le 0 ]]; then
+        echo "n/a"
+        return
+    fi
+
+    awk -v b="$bytes" -v s="$duration_seconds" 'BEGIN { printf "%.1f MB/s", (b/1048576)/s }'
+}
+
 create_backup_dir() {
     local date_stamp
     date_stamp=$(date +%Y%m%d)
@@ -75,6 +100,43 @@ create_backup_dir() {
 # --- Start backup ------------------------------------------------------------
 log "========== Starting full backup =========="
 
+if [[ ! "$BACKUP_GZIP_LEVEL" =~ ^[1-9]$ ]]; then
+    log "WARNING: Invalid BACKUP_GZIP_LEVEL='$BACKUP_GZIP_LEVEL'. Falling back to 6."
+    BACKUP_GZIP_LEVEL=6
+fi
+
+case "${BACKUP_COMPRESSOR,,}" in
+    auto)
+        if command -v pigz >/dev/null 2>&1; then
+            COMPRESS_CMD=(pigz "-${BACKUP_GZIP_LEVEL}")
+        else
+            COMPRESS_CMD=(gzip "-${BACKUP_GZIP_LEVEL}")
+        fi
+        ;;
+    pigz)
+        if command -v pigz >/dev/null 2>&1; then
+            COMPRESS_CMD=(pigz "-${BACKUP_GZIP_LEVEL}")
+        else
+            log "WARNING: BACKUP_COMPRESSOR='pigz' requested but pigz is not installed. Falling back to gzip."
+            COMPRESS_CMD=(gzip "-${BACKUP_GZIP_LEVEL}")
+        fi
+        ;;
+    gzip)
+        COMPRESS_CMD=(gzip "-${BACKUP_GZIP_LEVEL}")
+        ;;
+    *)
+        log "WARNING: Invalid BACKUP_COMPRESSOR='$BACKUP_COMPRESSOR'. Falling back to auto."
+        if command -v pigz >/dev/null 2>&1; then
+            COMPRESS_CMD=(pigz "-${BACKUP_GZIP_LEVEL}")
+        else
+            COMPRESS_CMD=(gzip "-${BACKUP_GZIP_LEVEL}")
+        fi
+        ;;
+esac
+
+TOTAL_START=$SECONDS
+log "Compression: ${COMPRESS_CMD[0]} level ${BACKUP_GZIP_LEVEL}"
+
 BKUP_DIR=$(create_backup_dir)
 log "Backup directory: $BKUP_DIR"
 
@@ -83,14 +145,16 @@ REPORT_FILE="${BKUP_DIR}/backup_report.txt"
 {
     echo "Backup Report - $(date)"
     echo "================================================"
-    printf "%-35s | %-10s | %s\n" "Item" "Size" "Type"
-    printf "%-35s | %-10s | %s\n" "-----------------------------------" "----------" "------"
+    echo "Compression: ${COMPRESS_CMD[0]} level ${BACKUP_GZIP_LEVEL}"
+    printf "%-35s | %-10s | %-8s | %-12s | %s\n" "Item" "Size" "Type" "Duration" "Throughput"
+    printf "%-35s | %-10s | %-8s | %-12s | %s\n" "-----------------------------------" "----------" "--------" "------------" "------------"
 } > "$REPORT_FILE"
 
 ERRORS=0
 
 # --- 1. Back up named Docker volumes ----------------------------------------
 log "--- Phase 1: Named Docker volumes ---"
+PHASE1_START=$SECONDS
 
 cd "$COMPOSE_DIR"
 # Always prefer this stack's project name from .env to avoid matching
@@ -112,31 +176,40 @@ else
             VOL_NAME="${PROJECT_NAME}_${VOL_KEY}"
             if ! docker volume inspect "$VOL_NAME" > /dev/null 2>&1; then
                 log "  SKIP: Volume not found for key '$VOL_KEY'"
-                printf "%-35s | %-10s | %s\n" "$VOL_KEY" "SKIP" "volume" >> "$REPORT_FILE"
+                printf "%-35s | %-10s | %-8s | %-12s | %s\n" "$VOL_KEY" "SKIP" "volume" "--" "--" >> "$REPORT_FILE"
                 continue
             fi
         fi
 
         log "  Backing up volume: $VOL_KEY ($VOL_NAME)"
         BKUP_FILE="${BKUP_DIR}/${VOL_KEY}.tar.gz"
+        ITEM_START=$SECONDS
 
         if docker run --rm \
             -v "${VOL_NAME}:/volume:ro" \
-            -v "${BKUP_DIR}:/backup" \
             busybox \
-            tar czf "/backup/${VOL_KEY}.tar.gz" -C /volume . 2>/dev/null; then
+            tar cf - -C /volume . 2>/dev/null | "${COMPRESS_CMD[@]}" > "$BKUP_FILE"; then
             FILE_SIZE=$(du -h "$BKUP_FILE" | cut -f1)
-            printf "%-35s | %-10s | %s\n" "$VOL_KEY" "$FILE_SIZE" "volume" >> "$REPORT_FILE"
+            ITEM_SECONDS=$((SECONDS - ITEM_START))
+            ITEM_DURATION=$(format_duration "$ITEM_SECONDS")
+            FILE_BYTES=$(stat -c%s "$BKUP_FILE" 2>/dev/null || echo 0)
+            ITEM_THROUGHPUT=$(calc_throughput_mb_s "$FILE_BYTES" "$ITEM_SECONDS")
+            printf "%-35s | %-10s | %-8s | %-12s | %s\n" "$VOL_KEY" "$FILE_SIZE" "volume" "$ITEM_DURATION" "$ITEM_THROUGHPUT" >> "$REPORT_FILE"
         else
             log "  ERROR: Failed to back up volume $VOL_KEY"
-            printf "%-35s | %-10s | %s\n" "$VOL_KEY" "FAILED" "volume" >> "$REPORT_FILE"
+            ITEM_SECONDS=$((SECONDS - ITEM_START))
+            ITEM_DURATION=$(format_duration "$ITEM_SECONDS")
+            printf "%-35s | %-10s | %-8s | %-12s | %s\n" "$VOL_KEY" "FAILED" "volume" "$ITEM_DURATION" "--" >> "$REPORT_FILE"
             ERRORS=$((ERRORS + 1))
         fi
     done
 fi
+PHASE1_DURATION=$((SECONDS - PHASE1_START))
+log "Phase 1 duration: $(format_duration "$PHASE1_DURATION")"
 
 # --- 2. Back up bind-mounted data directories --------------------------------
 log "--- Phase 2: Bind-mounted data ---"
+PHASE2_START=$SECONDS
 
 declare -A BIND_MOUNTS=(
     ["derbynet"]="${PROJECT_DIR}/data/derbynet"
@@ -150,57 +223,84 @@ for MOUNT_NAME in "${!BIND_MOUNTS[@]}"; do
 
     if [[ ! -d "$MOUNT_PATH" ]]; then
         log "  SKIP: Bind mount path not found: $MOUNT_PATH"
-        printf "%-35s | %-10s | %s\n" "$MOUNT_NAME" "SKIP" "bind" >> "$REPORT_FILE"
+        printf "%-35s | %-10s | %-8s | %-12s | %s\n" "$MOUNT_NAME" "SKIP" "bind" "--" "--" >> "$REPORT_FILE"
         continue
     fi
 
     log "  Backing up bind mount: $MOUNT_NAME ($MOUNT_PATH)"
     BKUP_FILE="${BKUP_DIR}/bind_${MOUNT_NAME}.tar.gz"
+    ITEM_START=$SECONDS
 
-    if tar czf "$BKUP_FILE" -C "$MOUNT_PATH" . 2>/dev/null; then
+    if tar cf - -C "$MOUNT_PATH" . 2>/dev/null | "${COMPRESS_CMD[@]}" > "$BKUP_FILE"; then
         FILE_SIZE=$(du -h "$BKUP_FILE" | cut -f1)
-        printf "%-35s | %-10s | %s\n" "$MOUNT_NAME" "$FILE_SIZE" "bind" >> "$REPORT_FILE"
+        ITEM_SECONDS=$((SECONDS - ITEM_START))
+        ITEM_DURATION=$(format_duration "$ITEM_SECONDS")
+        FILE_BYTES=$(stat -c%s "$BKUP_FILE" 2>/dev/null || echo 0)
+        ITEM_THROUGHPUT=$(calc_throughput_mb_s "$FILE_BYTES" "$ITEM_SECONDS")
+        printf "%-35s | %-10s | %-8s | %-12s | %s\n" "$MOUNT_NAME" "$FILE_SIZE" "bind" "$ITEM_DURATION" "$ITEM_THROUGHPUT" >> "$REPORT_FILE"
     else
         log "  ERROR: Failed to back up bind mount $MOUNT_NAME"
-        printf "%-35s | %-10s | %s\n" "$MOUNT_NAME" "FAILED" "bind" >> "$REPORT_FILE"
+        ITEM_SECONDS=$((SECONDS - ITEM_START))
+        ITEM_DURATION=$(format_duration "$ITEM_SECONDS")
+        printf "%-35s | %-10s | %-8s | %-12s | %s\n" "$MOUNT_NAME" "FAILED" "bind" "$ITEM_DURATION" "--" >> "$REPORT_FILE"
         ERRORS=$((ERRORS + 1))
     fi
 done
+PHASE2_DURATION=$((SECONDS - PHASE2_START))
+log "Phase 2 duration: $(format_duration "$PHASE2_DURATION")"
 
 # --- 3. Postgres logical dump (Immich database) -----------------------------
 log "--- Phase 3: Postgres database dump ---"
+PHASE3_START=$SECONDS
 
 DB_CONTAINER="immich_postgres"
 PG_DUMP_FILE="${BKUP_DIR}/immich_postgres_dump.sql.gz"
 
 if docker ps --format '{{.Names}}' | grep -q "^${DB_CONTAINER}$"; then
     log "  Dumping Postgres via pg_dumpall..."
+    ITEM_START=$SECONDS
     if docker exec -t "$DB_CONTAINER" \
         pg_dumpall -U "${DB_USERNAME:-postgres}" 2>/dev/null \
-        | gzip > "$PG_DUMP_FILE"; then
+        | "${COMPRESS_CMD[@]}" > "$PG_DUMP_FILE"; then
         FILE_SIZE=$(du -h "$PG_DUMP_FILE" | cut -f1)
-        printf "%-35s | %-10s | %s\n" "immich_postgres_dump" "$FILE_SIZE" "pgdump" >> "$REPORT_FILE"
+        ITEM_SECONDS=$((SECONDS - ITEM_START))
+        ITEM_DURATION=$(format_duration "$ITEM_SECONDS")
+        FILE_BYTES=$(stat -c%s "$PG_DUMP_FILE" 2>/dev/null || echo 0)
+        ITEM_THROUGHPUT=$(calc_throughput_mb_s "$FILE_BYTES" "$ITEM_SECONDS")
+        printf "%-35s | %-10s | %-8s | %-12s | %s\n" "immich_postgres_dump" "$FILE_SIZE" "pgdump" "$ITEM_DURATION" "$ITEM_THROUGHPUT" >> "$REPORT_FILE"
         log "  Postgres dump complete: $FILE_SIZE"
     else
         log "  ERROR: Postgres dump failed"
-        printf "%-35s | %-10s | %s\n" "immich_postgres_dump" "FAILED" "pgdump" >> "$REPORT_FILE"
+        ITEM_SECONDS=$((SECONDS - ITEM_START))
+        ITEM_DURATION=$(format_duration "$ITEM_SECONDS")
+        printf "%-35s | %-10s | %-8s | %-12s | %s\n" "immich_postgres_dump" "FAILED" "pgdump" "$ITEM_DURATION" "--" >> "$REPORT_FILE"
         ERRORS=$((ERRORS + 1))
         # Clean up empty/partial dump file
         rm -f "$PG_DUMP_FILE"
     fi
 else
     log "  SKIP: Postgres container '$DB_CONTAINER' is not running"
-    printf "%-35s | %-10s | %s\n" "immich_postgres_dump" "SKIP" "pgdump" >> "$REPORT_FILE"
+    printf "%-35s | %-10s | %-8s | %-12s | %s\n" "immich_postgres_dump" "SKIP" "pgdump" "--" "--" >> "$REPORT_FILE"
 fi
+PHASE3_DURATION=$((SECONDS - PHASE3_START))
+log "Phase 3 duration: $(format_duration "$PHASE3_DURATION")"
 
 # --- 4. Report summary ------------------------------------------------------
+TOTAL_DURATION=$((SECONDS - TOTAL_START))
 {
     echo "================================================"
     echo "Backup completed: $(date)"
     echo "Errors: $ERRORS"
+    echo ""
+    echo "Duration Summary"
+    echo "- Phase 1 (volumes): $(format_duration "$PHASE1_DURATION")"
+    echo "- Phase 2 (bind mounts): $(format_duration "$PHASE2_DURATION")"
+    echo "- Phase 3 (Postgres dump): $(format_duration "$PHASE3_DURATION")"
+    echo "- Total: $(format_duration "$TOTAL_DURATION")"
 } >> "$REPORT_FILE"
 
 log "Backup report: $REPORT_FILE"
+log "Total duration: $(format_duration "$TOTAL_DURATION")"
 
 # --- 5. Rotate old backups --------------------------------------------------
 log "--- Phase 5: Backup rotation (keep $MAX_BACKUPS) ---"
