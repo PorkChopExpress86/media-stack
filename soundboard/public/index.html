@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Soundboard</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1><span>🔊</span> Soundboard</h1>
+      <nav>
+        <a href="/">Soundboard</a>
+        <a href="/upload.html">Upload</a>
+        <a href="/customize.html">Customize</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <div id="grid" class="soundboard-grid"></div>
+    </div>
+  </main>
+
+  <div id="toast"></div>
+
+  <script src="/app.js"></script>
+  <script>
+    let currentAudio = null;
+    let currentBtn = null;
+
+    async function loadBoard() {
+      const buttons = await apiFetch('/api/buttons').catch(() => []);
+      const grid = document.getElementById('grid');
+      grid.innerHTML = '';
+
+      buttons.forEach((btn) => {
+        const el = document.createElement('button');
+        el.className = 'sound-btn' + (btn.sound ? '' : ' empty');
+        el.style.background = btn.color || '#4a90d9';
+        el.dataset.sound = btn.sound || '';
+
+        el.innerHTML = `
+          <span class="btn-icon">${btn.sound ? '▶' : '—'}</span>
+          <span>${escapeHtml(btn.label || `Button ${btn.id}`)}</span>
+        `;
+
+        if (btn.sound) {
+          el.addEventListener('click', () => playSound(btn.sound, el));
+        }
+
+        grid.appendChild(el);
+      });
+    }
+
+    function playSound(filename, btnEl) {
+      const isSameButton = currentBtn === btnEl;
+
+      // Stop any currently playing sound
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
+        if (currentBtn) currentBtn.classList.remove('playing');
+        currentAudio = null;
+        currentBtn = null;
+      }
+
+      // If clicking the same button that was already playing, just stop
+      if (isSameButton) return;
+
+      const audio = new Audio(`/sounds/${encodeURIComponent(filename)}`);
+      currentAudio = audio;
+      currentBtn = btnEl;
+      btnEl.classList.add('playing');
+
+      audio.play().catch((err) => {
+        showToast(`Playback error: ${err.message}`, 'error');
+        btnEl.classList.remove('playing');
+      });
+
+      audio.addEventListener('ended', () => {
+        btnEl.classList.remove('playing');
+        currentAudio = null;
+        currentBtn = null;
+      });
+
+      audio.addEventListener('error', () => {
+        showToast('Could not load sound file', 'error');
+        btnEl.classList.remove('playing');
+        currentAudio = null;
+        currentBtn = null;
+      });
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    loadBoard();
+  </script>
+</body>
+</html>

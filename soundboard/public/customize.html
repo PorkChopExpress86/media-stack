@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Customize — Soundboard</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1><span>🔊</span> Soundboard</h1>
+      <nav>
+        <a href="/">Soundboard</a>
+        <a href="/upload.html">Upload</a>
+        <a href="/customize.html">Customize</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <h2 class="page-title">Customize Buttons</h2>
+
+      <div class="actions-bar">
+        <button class="btn btn-primary" id="save-btn">💾 Save Changes</button>
+        <button class="btn btn-ghost" id="add-btn">＋ Add Button</button>
+        <button class="btn btn-ghost" id="refresh-btn">↻ Reload</button>
+      </div>
+
+      <div id="customize-grid" class="customize-grid"></div>
+    </div>
+  </main>
+
+  <div id="toast"></div>
+
+  <script src="/app.js"></script>
+  <script>
+    let buttons = [];
+    let sounds = [];
+
+    async function load() {
+      [buttons, sounds] = await Promise.all([
+        apiFetch('/api/buttons').catch(() => []),
+        apiFetch('/api/sounds').catch(() => []),
+      ]);
+      renderGrid();
+    }
+
+    function renderGrid() {
+      const grid = document.getElementById('customize-grid');
+      grid.innerHTML = '';
+
+      buttons.forEach((btn, idx) => {
+        const card = document.createElement('div');
+        card.className = 'customize-card';
+        card.innerHTML = `
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <strong style="font-size:0.85rem;color:var(--text-muted)">Button ${btn.id}</strong>
+            <button class="btn btn-danger" style="padding:0.3rem 0.6rem;font-size:0.8rem;" data-remove="${idx}">Remove</button>
+          </div>
+
+          <div>
+            <label>Label</label>
+            <input type="text" data-field="label" data-idx="${idx}" value="${escapeHtml(btn.label || '')}" maxlength="40" />
+          </div>
+
+          <div>
+            <label>Sound</label>
+            <select data-field="sound" data-idx="${idx}">
+              <option value="">— None —</option>
+              ${sounds.map((s) => `<option value="${escapeHtml(s)}" ${btn.sound === s ? 'selected' : ''}>${escapeHtml(s)}</option>`).join('')}
+            </select>
+          </div>
+
+          <div>
+            <label>Color</label>
+            <div class="color-row">
+              <input type="color" data-field="color" data-idx="${idx}" value="${btn.color || '#4a90d9'}" />
+              <button class="btn-preview" data-preview="${idx}" style="background:${btn.color || '#4a90d9'}">${escapeHtml(btn.label || `Button ${btn.id}`)}</button>
+            </div>
+          </div>
+        `;
+
+        // Live update on input changes
+        card.querySelectorAll('[data-field]').forEach((el) => {
+          el.addEventListener('input', () => {
+            const i = Number(el.dataset.idx);
+            const field = el.dataset.field;
+            buttons[i][field] = el.value || (field === 'sound' ? null : el.value);
+            // Update preview button
+            const preview = card.querySelector(`[data-preview="${i}"]`);
+            if (preview) {
+              preview.style.background = buttons[i].color || '#4a90d9';
+              preview.textContent = buttons[i].label || `Button ${buttons[i].id}`;
+            }
+          });
+        });
+
+        // Remove button — locate by id to handle re-renders
+        card.querySelector('[data-remove]').addEventListener('click', () => {
+          const removeId = btn.id;
+          const pos = buttons.findIndex((b) => b.id === removeId);
+          if (pos !== -1) buttons.splice(pos, 1);
+          renderGrid();
+        });
+
+        grid.appendChild(card);
+      });
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    document.getElementById('add-btn').addEventListener('click', () => {
+      const maxId = buttons.reduce((m, b) => Math.max(m, b.id), 0);
+      buttons.push({ id: maxId + 1, label: `Button ${maxId + 1}`, sound: null, color: '#4a90d9' });
+      renderGrid();
+    });
+
+    document.getElementById('refresh-btn').addEventListener('click', load);
+
+    document.getElementById('save-btn').addEventListener('click', async () => {
+      // Re-read current form values before saving
+      document.querySelectorAll('[data-field]').forEach((el) => {
+        const i = Number(el.dataset.idx);
+        const field = el.dataset.field;
+        if (i >= 0 && i < buttons.length) {
+          buttons[i][field] = el.value || (field === 'sound' ? null : el.value);
+        }
+      });
+
+      try {
+        await apiFetch('/api/buttons', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(buttons),
+        });
+        showToast('Configuration saved!', 'success');
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+
+    load();
+  </script>
+</body>
+</html>

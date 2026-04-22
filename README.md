@@ -30,12 +30,12 @@ A comprehensive Docker Compose setup for a home media server with automated back
 | **Home Automation** | Home Assistant | 8123 (host network) |
 | **Gaming** | Minecraft Bedrock (Survival) | 19132/udp (via NPM) |
 | | Minecraft Bedrock (Creative) | 19133/udp (via NPM) |
+| **Soundboard** | Soundboard | 8055 |
 | **Finance** | Actual Budget | 5006 |
 | **Other** | DerbyNet | 8050 |
 | **VPN** | Gluetun (PIA) | — |
 | **Auto-Updates** | Watchtower | — |
 | **Monitoring** | Prometheus | internal only |
-| | Grafana | 3000 |
 | | cAdvisor | internal only |
 | | Node Exporter | internal only |
 | | Exportarr (Sonarr, Radarr, Prowlarr) | internal only |
@@ -131,6 +131,16 @@ Dashboards include:
 - Sonarr/Radarr/Prowlarr stats and queue sizes
 
 Prometheus retention is set to 15 days. Exporters and cAdvisor run on internal-only ports (not exposed to the host).
+
+## 🔊 Soundboard
+
+A lightweight web-based soundboard running at `http://<host>:8055`.
+
+- **Soundboard** (`/`) — Grid of customizable buttons; click a button to play its assigned clip.
+- **Upload** (`/upload.html`) — Drag-and-drop or browse to upload audio files (MP3, WAV, OGG, FLAC, AAC, M4A, WEBM, max 50 MB each). Manage the sound library and delete clips from this page.
+- **Customize** (`/customize.html`) — Set each button's label, assigned sound clip, and background colour. Add or remove buttons, then save the configuration.
+
+Sound files and button configuration are stored in the `soundboard_data` Docker volume and persist across container restarts.
 
 ## 🔒 Security
 
