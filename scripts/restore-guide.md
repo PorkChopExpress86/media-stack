@@ -247,7 +247,7 @@ Configure in: Administration → Settings → Backup Settings
 ## Additional Resources
 
 - **Immich Documentation**: https://docs.immich.app/administration/backup-and-restore
-- **Your Backup Guide**: [IMMICH_BACKUP_GUIDE.md](./IMMICH_BACKUP_GUIDE.md)
+- **Your Backup Guide**: [immich-backup-guide.md](./immich-backup-guide.md)
 - **Docker Compose File**: [../docker-compose.yaml](../docker-compose.yaml)
 - **Environment Config**: [../.env](../.env)
 
