@@ -7,6 +7,8 @@ A comprehensive Docker Compose setup for a home media server with automated back
 - [Services](#services-included)
 - [Quick Start](#quick-start)
 - [Configuration](#configuration)
+- [Naming Standard](#naming-standard)
+- [Project Layout](#project-layout)
 - [Backup & Restore](#backup--restore)
 - [Maintenance](#maintenance)
 - [Monitoring](#monitoring)
@@ -25,6 +27,7 @@ A comprehensive Docker Compose setup for a home media server with automated back
 | | Sonarr | 8989 (via VPN) |
 | | Bazarr | 6767 (via VPN) |
 | | qBittorrent | 8080 (via VPN) |
+| | FlareSolverr | internal only (via VPN namespace) |
 | | Decluttarr | — |
 | **Photos** | Immich | 2283 |
 | **Home Automation** | Home Assistant | 8123 (host network) |
@@ -77,6 +80,96 @@ Edit `.env` with your paths and credentials:
 
 See `.env.example` for the full list with defaults.
 
+### Naming Standard
+
+Use these naming rules for consistency across `.env`, `docker-compose.yaml`, scripts, and backup artifacts:
+
+- **Stack-defined `.env` variables:** use `lower_snake_case`.
+	- Examples: `qbittorrent_downloads`, `kids_tv_shows`, `vpn_username`, `jellyfin_url`
+- **Upstream/app-required `.env` variables:** keep `UPPER_SNAKE_CASE` exactly as expected by images/apps.
+	- Examples: `COMPOSE_PROJECT_NAME`, `RADARR_API_KEY`, `TZ`, `UPLOAD_LOCATION`, `DB_PASSWORD`
+- **Service names and `container_name` values (Compose):** use lowercase; use `kebab-case` for multi-word names.
+	- Examples: `minecraft-survival`, `minecraft-creative`, `immich-server`
+- **Named volume keys (Compose):** use `lower_snake_case` and prefer `_data` suffix for persistent app data.
+	- Examples: `prowlarr_data`, `qbittorrent_data`, `immich_server_data`
+	- Keep existing legacy names as-is (for example `model-cache`) unless doing a planned migration.
+- **Script filenames:** use `kebab-case` for operational scripts in `scripts/linux/`.
+	- Examples: `backup-all.sh`, `restore-volumes.sh`, `qb-port-sync.sh`
+- **Documentation filenames in `scripts/`:** use `kebab-case` for project-maintained guides.
+	- Examples: `immich-backup-guide.md`, `restore-guide.md`
+- **Backup set directories:** use date-plus-sequence format `YYYYMMDD-NNN`.
+	- Example: `20260419-001`
+- **Compatibility rule:** prefer these standards for all new names; do not rename existing variables/files already wired into Compose or automation unless migration is explicitly planned.
+
+#### Examples
+
+```text
+# .env variables
+qbittorrent_downloads=/mnt/media/qb
+vpn_username=your_user
+RADARR_API_KEY=xxxxxxxxxxxxxxxx
+WATCHTOWER_NOTIFICATION_EMAIL_SERVER=smtp.gmail.com
+
+# files
+scripts/linux/qb-port-sync.sh
+scripts/linux/backup-all.sh
+scripts/immich-backup-guide.md
+scripts/restore-guide.md
+vol_bkup/20260419-001/
+```
+
+### qBittorrent + Gluetun Port Auto-Sync
+
+This stack uses Gluetun's native port-forward hooks to keep qBittorrent's listening port aligned with the currently forwarded VPN port.
+
+- Gluetun runs up/down hook commands when VPN port forwarding is established or torn down.
+- The hook script updates qBittorrent over `http://127.0.0.1:8080/api/v2/app/setPreferences`.
+- qBittorrent peer-port host mappings are intentionally **not** fixed in Compose; the VPN-assigned forwarded port is authoritative.
+
+Required qBittorrent setting:
+
+- **Web UI → Authentication → "Bypass authentication for clients on localhost"** must be enabled (`bypass_local_auth=true`).
+
+Other required assumptions:
+
+- qBittorrent Web UI remains enabled on port `8080`.
+- qBittorrent and Gluetun share the same network namespace (`network_mode: "service:vpn"`).
+
+Troubleshooting:
+
+- Check Gluetun logs first: `docker compose logs -f vpn`.
+- Verify hook output lines prefixed with `[qb-port-sync]` (shows before/after `listen_port` and interface).
+- If the hook cannot reach qBittorrent, confirm WebUI is still on `8080` and localhost-auth bypass is enabled.
+- On reconnect, the forwarded port can change; this is expected and should be re-applied automatically.
+- If needed, restart just the shared namespace pair: `docker compose restart vpn qbittorrent`.
+
+### FlareSolverr + Prowlarr
+
+`flaresolverr` is included for Cloudflare-protected torrent indexers such as `1337x`.
+
+- The container shares Gluetun's network namespace with the *arr stack using `network_mode: "service:vpn"`.
+- In Prowlarr, set **Settings → Indexers → FlareSolverr URL** to `http://127.0.0.1:8191`.
+- If FlareSolverr or Gluetun is restarted, Prowlarr may need a quick re-test on affected indexers.
+
+## 🗂️ Project Layout
+
+This repository is organized by function so day-to-day operations are easier to navigate:
+
+- `docker-compose.yaml` — primary stack definition.
+- `.env` / `.env.example` — runtime secrets and environment configuration template.
+- `scripts/linux/` — operational Linux scripts (backup, restore, update, maintenance).
+- `scripts/windows/` — PowerShell equivalents for Windows-based operations.
+- `scripts/` — shared helper scripts and operational guides.
+- `config/` — service-specific static configuration (Prometheus, Grafana, hardware accel snippets).
+- `data/` — bind-mounted application data directories.
+- `vol_bkup/` — date-stamped backup sets (`YYYYMMDD-NNN`).
+
+Organization conventions:
+
+- New automation scripts should go in `scripts/linux/` or `scripts/windows/`.
+- New operations documentation should live in `scripts/` and follow naming standards.
+- Keep service-specific static config in `config/<service>/`.
+
 ## 💾 Backup & Restore
 
 ### Automated Weekly Backup
@@ -86,7 +179,13 @@ A cron job runs `scripts/linux/backup-all.sh` every Sunday at 3:00 AM. It backs 
 - Bind-mounted data (DerbyNet, Actual Budget, Minecraft worlds)
 - Immich Postgres database (via `pg_dumpall`)
 
-Backups are stored in `vol_bkup/` as `.tar.gz` archives. The 14 most recent backup sets are retained.
+Backups are stored in `vol_bkup/` as `.tar.gz` archives. The 3 most recent weekly backup sets are retained (~3 weeks).
+
+Compression and duration tuning:
+- `BACKUP_GZIP_LEVEL` controls compression level (`1` = fastest/larger, `9` = slowest/smaller, default `6`).
+- `BACKUP_COMPRESSOR` controls compressor choice: `auto` (default), `pigz`, or `gzip`.
+- If `BACKUP_COMPRESSOR=auto` and `pigz` is installed on the host, the script auto-uses it for faster multi-core compression.
+- `backup_report.txt` now includes per-item durations and throughput (MB/s), plus phase and total runtime summary.
 
 ```bash
 # Set up the cron job (run once)
