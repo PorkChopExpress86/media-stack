@@ -165,6 +165,7 @@ This repository is organized by function so day-to-day operations are easier to 
 - `scripts/linux/` — operational Linux scripts (backup, restore, update, maintenance).
 - `scripts/windows/` — PowerShell equivalents for Windows-based operations.
 - `scripts/` — shared helper scripts and operational guides.
+- `docs/` — project documentation for operational workflows and feature-specific guides.
 - `config/` — service-specific static configuration (Prometheus, Grafana, hardware accel snippets).
 - `data/` — bind-mounted application data directories.
 - `vol_bkup/` — date-stamped backup sets (`YYYYMMDD-NNN`).
@@ -219,6 +220,91 @@ bash scripts/linux/update-compose.sh
 docker compose pull && docker compose up -d
 docker compose logs -f [service]
 docker compose restart [service]
+```
+
+### Regression test suite
+
+A single script runs all regression checks in sequence and reports a combined pass/fail result.
+
+```bash
+bash scripts/linux/run-regression-tests.sh
+```
+
+To automate weekly runs, install the bundled systemd timer (runs every Sunday at 02:00):
+
+```bash
+sudo bash scripts/linux/install-regression-timer.sh
+```
+
+Check the timer status:
+
+```bash
+systemctl status media-stack-regression.timer
+journalctl -u media-stack-regression.service --no-pager -n 50
+```
+
+Remove the timer:
+
+```bash
+sudo bash scripts/linux/install-regression-timer.sh uninstall
+```
+
+Unit files live in `scripts/linux/systemd/`. Both individual suites can still be run independently — see the sections below.
+
+### Nginx proxy regression checks
+
+Use the test service to verify enabled Nginx Proxy Manager domains still respond through the proxy after changes.
+
+What it checks:
+
+- Discovers enabled proxy hosts directly from Nginx Proxy Manager's `database.sqlite`
+- Sends requests through the `nginx` container using the configured domain as the host/SNI value
+- Treats only HTTP `200` and `401` as passing
+- Treats checked-in baseline `302` redirects as passing when they match known-good login/app redirect targets
+- Fails any response taking longer than 10 seconds
+- Appends results to root-level `test.log`
+
+Run the checks manually:
+
+```bash
+docker compose build tests
+docker compose run --rm -T tests
+```
+
+Run a single domain only:
+
+```bash
+docker compose run --rm -T -e TEST_DOMAIN=jellyfin.ohmygoshwhatever.com tests
+```
+
+Run the scheduled wrapper manually:
+
+```bash
+bash scripts/linux/run-tests-scheduled.sh
+```
+
+`test.log` is ignored by git via the existing `*.log` rule in `.gitignore`.
+
+Known-good redirect baselines are stored in `config/nginx-proxy-regression-baseline.json`.
+
+### Volume permission regression check
+
+Use the host-side volume permission regression script to confirm running containers can access their bind mounts and named Docker volumes with the expected read/write mode.
+
+What it checks:
+
+- inspects running compose-managed containers
+- checks bind mounts and named Docker volumes only
+- verifies the mount path exists inside the container
+- verifies readable access for read-only mounts
+- verifies readable and writable access for read-write mounts
+- falls back to a helper container for shell-less images when the container user can be inferred numerically
+- writes results to root-level `volume-permissions.log`
+
+Run it manually:
+
+```bash
+bash scripts/linux/test-volume-permissions.sh
 ```
 
 Watchtower checks for image updates every 6 hours and sends email notifications.
