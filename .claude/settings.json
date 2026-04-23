@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r 'select(.tool_input.file_path | endswith(\".py\")) | .tool_input.file_path' | { read -r f; python -m black \"$f\" 2>/dev/null || true; }",
+            "statusMessage": "Formatting with black..."
+          }
+        ]
+      }
+    ]
+  }
+}
