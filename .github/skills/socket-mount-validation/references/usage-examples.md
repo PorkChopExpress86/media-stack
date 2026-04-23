@@ -1,9 +1,16 @@
 # Socket Access Test — Example Invocations
 
-## Default (watchtower + /var/run/docker.sock)
+> **Note (2026-04-23):** As of this date, no service in this stack mounts docker.sock.
+> Watchtower was removed in favour of Dependabot-driven PRs. This skill applies if a
+> socket-mount service is re-added in future. The historical examples below used
+> `watchtower` as the reference container; substitute the actual container name.
+
+## Default (no socket-mount service currently active)
 
 ```bash
-bash .github/skills/socket-mount-validation/scripts/test-socket-access.sh
+# Pass --container <name> explicitly; there is no meaningful default container right now.
+bash .github/skills/socket-mount-validation/scripts/test-socket-access.sh \
+  --container <your-service>
 ```
 
 ## Custom container
@@ -24,11 +31,11 @@ CONTAINER=myservice SOCKET_PATH=/run/docker.sock \
 ## Expected passing output
 
 ```text
-[2026-04-22 20:05:52] START socket-access test container=watchtower socket=/var/run/docker.sock
-[2026-04-22 20:05:52] PASS  container=watchtower check=socket-present path=/var/run/docker.sock method=host-stat
-[2026-04-22 20:05:52] INFO  container=watchtower check=identity configured_user=1000:1000 group_add=986
-[2026-04-22 20:05:53] PASS  container=watchtower check=docker-api-ping response=OK method=helper-container
-[2026-04-22 20:05:53] PASS  container=watchtower check=log-scan reason=no-docker-api-errors-in-recent-50-lines
+[2026-04-22 20:05:52] START socket-access test container=<your-service> socket=/var/run/docker.sock
+[2026-04-22 20:05:52] PASS  container=<your-service> check=socket-present path=/var/run/docker.sock method=host-stat
+[2026-04-22 20:05:52] INFO  container=<your-service> check=identity configured_user=1000:1000 group_add=986
+[2026-04-22 20:05:53] PASS  container=<your-service> check=docker-api-ping response=OK method=helper-container
+[2026-04-22 20:05:53] PASS  container=<your-service> check=log-scan reason=no-docker-api-errors-in-recent-50-lines
 [2026-04-22 20:05:53] SUMMARY result=PASS failures=0
 ```
 

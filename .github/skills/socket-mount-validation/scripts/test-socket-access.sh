@@ -14,7 +14,8 @@
 #   bash test-socket-access.sh [--container <name>] [--socket <path>]
 #
 # Env overrides:
-#   CONTAINER        — compose service name or container name (default: watchtower)
+#   CONTAINER        — compose service name or container name (required; no default —
+#                      no service in this stack currently mounts docker.sock)
 #   SOCKET_PATH      — path to the Unix socket on the HOST (default: /var/run/docker.sock)
 #   LOG_PATH         — path to write results (default: socket-access.log in project root)
 #   HELPER_IMAGE     — image for the API ping helper container (default: alpine:latest)
@@ -30,7 +31,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../../../../" && pwd)"
 LOG_PATH="${LOG_PATH:-${PROJECT_ROOT}/socket-access.log}"
 
-CONTAINER="${CONTAINER:-watchtower}"
+# No service in this stack currently mounts docker.sock (Watchtower was removed 2026-04-23).
+# CONTAINER must be supplied via --container or the CONTAINER env var when a socket-mount
+# service is re-added. Leaving it empty causes the "container not running" guard to exit 2.
+CONTAINER="${CONTAINER:-}"
 SOCKET_PATH="${SOCKET_PATH:-/var/run/docker.sock}"
 HELPER_IMAGE="${HELPER_IMAGE:-alpine:latest}"
 

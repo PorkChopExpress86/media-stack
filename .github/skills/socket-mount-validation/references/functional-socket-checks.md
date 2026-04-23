@@ -13,7 +13,7 @@ A helper container can validate mount shape and existence, but it may not have t
 3. Execute a minimal, read-only Docker API probe from that service.
 4. Distinguish auth/permission failures from transport failures.
 
-## Example checks (watchtower/docker.sock)
+## Example checks (docker.sock)
 
 ### 1) Confirm mount exists in container
 
@@ -50,7 +50,7 @@ Interpretation:
 Use the bundled script to run all three checks (presence, identity, API ping) in one pass:
 
 ```bash
-bash .github/skills/socket-mount-validation/scripts/test-socket-access.sh --container watchtower
+bash .github/skills/socket-mount-validation/scripts/test-socket-access.sh --container <your-service>
 ```
 
 See [usage examples](./usage-examples.md) for invocation patterns and output interpretation.
