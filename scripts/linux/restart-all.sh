@@ -24,7 +24,7 @@ echo "==> Starting all stacks"
 while IFS= read -r stack; do
   [[ -n "$stack" ]] || continue
   echo "  up: ${stack}"
-  compose_cmd_for_stack "$stack" up -d
+  compose_cmd_for_stack "$stack" up -d --wait
 done < <(active_stack_names)
 
 docker image prune -af

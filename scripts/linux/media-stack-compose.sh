@@ -7,13 +7,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 MODULAR_STACK_NAMES=(
-  nginx-proxy
   jellyfin
   arr-stack
   immich
   lan-apps
   proxied-apps
   monitoring
+  nginx-proxy
 )
 
 normalize_stack_name() {
