@@ -1,0 +1,10 @@
+[Unit]
+Description=Media Stack regression tests — weekly timer
+
+[Timer]
+# Every Sunday at 02:00 local time
+OnCalendar=Sun *-*-* 02:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
