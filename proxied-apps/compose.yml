@@ -64,8 +64,9 @@ services:
   minecraft-survival:
     image: itzg/minecraft-bedrock-server@sha256:406b421c5394d7fc957a2b51ca30ebd38dfe06bdee70b817ed86ac16c7bccc6b
     container_name: minecraft-survival
-    user: "1000:1000"
     environment:
+      UID: "1000"
+      GID: "1000"
       EULA: "TRUE"
       GAMEMODE: survival
       DIFFICULTY: easy
@@ -89,8 +90,9 @@ services:
   minecraft-creative:
     image: itzg/minecraft-bedrock-server@sha256:406b421c5394d7fc957a2b51ca30ebd38dfe06bdee70b817ed86ac16c7bccc6b
     container_name: minecraft-creative
-    user: "1000:1000"
     environment:
+      UID: "1000"
+      GID: "1000"
       EULA: "TRUE"
       GAMEMODE: creative
       DIFFICULTY: peaceful

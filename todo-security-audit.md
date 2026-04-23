@@ -53,7 +53,7 @@ _Audited: 2026-04-22 | Re-reviewed: 2026-04-23 against modular compose stacks_
 
 - [x] **No `read_only: true` on stateless services**
   - `decluttarr`, `redis`, `immich-machine-learning` are confirmed read-only with `tmpfs` mounts.
-  - `flaresolverr` had `tmpfs` entries but `read_only: true` was dropped during the modular migration — **restored 2026-04-23** in `arr-stack/compose.yml`.
+  - `flaresolverr` had `read_only: true` restored 2026-04-23, but the image writes to `/app/chromedriver` at startup (Chromium driver setup) — incompatible with a read-only rootfs. Reverted 2026-04-23; `/tmp` and `/run` tmpfs mounts retained.
 
 - [x] **No resource limits on any service**
   - `homeassistant` now has Compose-enforced CPU and memory caps using service-level `cpus`, `mem_limit`, and `mem_reservation`.

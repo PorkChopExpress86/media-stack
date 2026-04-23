@@ -80,9 +80,7 @@ services:
       - LOG_HTML=false
       - CAPTCHA_SOLVER=none
       - TZ=${TZ:-America/Chicago}
-    read_only: true
     tmpfs:
-      - /app/.local:uid=1000,gid=1000,mode=775
       - /tmp
       - /run
     restart: always
