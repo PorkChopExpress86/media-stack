@@ -78,7 +78,17 @@ Edit `.env` with your paths and credentials:
 | **Notifications** | `email`, `gmail_app_passwd` |
 | **Other** | `jellyfin_url`, `plex_claim`, `TZ` |
 
-See `.env.example` for the full list with defaults.
+The legacy monolithic stack still uses root `.env` and `.env.example`. Modular stacks use stack-local env files:
+
+- `nginx-proxy/.env.example`
+- `jellyfin/.env.example`
+- `arr-stack/.env.example`
+- `immich/.env.example`
+- `lan-apps/.env.example`
+- `proxied-apps/.env.example`
+- `monitoring/.env.example`
+
+For each modular stack, copy its `.env.example` to `.env` in the same folder and fill only that stack's values. The live `.env` files are ignored by git.
 
 ### Naming Standard
 
@@ -160,13 +170,23 @@ Troubleshooting:
 
 This repository is organized by function so day-to-day operations are easier to navigate:
 
-- `docker-compose.yaml` — primary stack definition.
+- `docker-compose.yaml` — legacy monolithic stack definition and rollback source during migration.
+- `nginx-proxy/compose.yml` — Nginx Proxy Manager and proxy regression test container.
+- `jellyfin/compose.yml` — Jellyfin as its own proxied media stack.
+- `arr-stack/compose.yml` — Gluetun, qBittorrent, *arr apps, FlareSolverr, Decluttarr, qBittorrent metrics.
+- `immich/compose.yml` — Immich server, machine learning, Redis, Postgres.
+- `immich/config/` — Immich hardware acceleration snippets for ML and transcoding.
+- `lan-apps/compose.yml` — direct/LAN apps: Actual Budget, Pinchflat, Plex, Home Assistant.
+- `proxied-apps/compose.yml` — other standalone apps reached by NPM: Audiobookshelf, DerbyNet, Minecraft.
+- `monitoring/compose.yml` — Prometheus, Grafana, cAdvisor, node-exporter, Watchtower.
 - `.env` / `.env.example` — runtime secrets and environment configuration template.
 - `scripts/linux/` — operational Linux scripts (backup, restore, update, maintenance).
 - `scripts/windows/` — PowerShell equivalents for Windows-based operations.
 - `scripts/` — shared helper scripts and operational guides.
 - `docs/` — project documentation for operational workflows and feature-specific guides.
-- `config/` — service-specific static configuration (Prometheus, Grafana, hardware accel snippets).
+- `monitoring/config/` — Prometheus and Grafana provisioning/dashboards.
+- `nginx-proxy/config/` — Nginx proxy regression baseline.
+- `config/` — shared static snippets that are not owned by a migrated stack yet.
 - `data/` — bind-mounted application data directories.
 - `vol_bkup/` — date-stamped backup sets (`YYYYMMDD-NNN`).
 
@@ -174,7 +194,7 @@ Organization conventions:
 
 - New automation scripts should go in `scripts/linux/` or `scripts/windows/`.
 - New operations documentation should live in `scripts/` and follow naming standards.
-- Keep service-specific static config in `config/<service>/`.
+- Keep service-specific static config next to the owning stack, for example `monitoring/config/`.
 
 ## 💾 Backup & Restore
 
@@ -221,6 +241,37 @@ docker compose pull && docker compose up -d
 docker compose logs -f [service]
 docker compose restart [service]
 ```
+
+### Modular Compose migration
+
+The legacy `docker-compose.yaml` remains the default. The modular files are staged so services can be moved one stack at a time while reusing the existing `media-stack_*` Docker volumes and the same bind mounts.
+
+Each modular stack reads its own ignored `.env` file from the stack folder. The helper scripts prefer stack-local `.env` files in modular mode and fall back to root `.env` where needed for compatibility.
+
+Before starting any modular stack that needs reverse proxy access, create the shared external network once:
+
+```bash
+docker network create media_proxy
+```
+
+Bring up an individual modular stack with an explicit project name:
+
+```bash
+docker compose --project-directory "$PWD" --env-file nginx-proxy/.env -p nginx-proxy -f nginx-proxy/compose.yml up -d
+docker compose --project-directory "$PWD" --env-file jellyfin/.env -p jellyfin -f jellyfin/compose.yml up -d
+docker compose --project-directory "$PWD" --env-file arr-stack/.env -p arr-stack -f arr-stack/compose.yml up -d
+docker compose --project-directory "$PWD" --env-file immich/.env -p immich -f immich/compose.yml up -d
+```
+
+Operational scripts use the monolithic stack unless `MEDIA_STACK_MODE=modular` is set. Limit modular script runs to specific stacks with `MEDIA_STACK_STACKS` when migrating in phases:
+
+```bash
+MEDIA_STACK_MODE=modular MEDIA_STACK_STACKS=nginx-proxy,arr-stack bash scripts/linux/run-regression-tests.sh
+MEDIA_STACK_MODE=modular bash scripts/linux/backup-all.sh
+MEDIA_STACK_MODE=modular MEDIA_STACK_STACKS=lan-apps bash scripts/linux/update-compose.sh
+```
+
+Do not use `docker compose down -v` during migration. Do not use `--remove-orphans` until legacy containers and any orphaned services have been reviewed explicitly.
 
 ### Regression test suite
 
@@ -285,7 +336,7 @@ bash scripts/linux/run-tests-scheduled.sh
 
 `test.log` is ignored by git via the existing `*.log` rule in `.gitignore`.
 
-Known-good redirect baselines are stored in `config/nginx-proxy-regression-baseline.json`.
+Known-good redirect baselines are stored in `nginx-proxy/config/nginx-proxy-regression-baseline.json`.
 
 ### Volume permission regression check
 

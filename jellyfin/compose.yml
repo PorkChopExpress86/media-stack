@@ -1,0 +1,59 @@
+---
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  jellyfin:
+    image: jellyfin/jellyfin@sha256:1694ff069f0c9dafb283c36765175606866769f5d72f2ed56b6a0f1be922fc37
+    user: "1000:1000"
+    container_name: jellyfin
+    environment:
+      - TZ=${TZ:-America/Chicago}
+      - JELLYFIN_PublishedServerUrl=${jellyfin_url}
+    group_add:
+      - "992"
+      - "44"
+    volumes:
+      - jellyfin_config:/config
+      - jellyfin_cache:/cache
+      - ${movies}:/media/movies
+      - ${tv_shows}:/media/tv_shows
+      - ${kids_movies}:/media/kids_movies
+      - ${kids_tv_shows}:/media/kids_tv_shows
+      - ${other_movies}:/media/other_movies
+      - ${other_shows}:/media/other_shows
+      - ${pinchflat_downloads}:/pinchflat
+      - ${home_movies}:/media/home_movies
+    devices:
+      - /dev/dri:/dev/dri
+    ports:
+      - 8096:8096/tcp
+      - 7359:7359/udp
+    restart: 'unless-stopped'
+    logging: *default-logging
+    networks:
+      media_proxy:
+        aliases:
+          - jellyfin
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8096/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+networks:
+  media_proxy:
+    external: true
+    name: media_proxy
+
+volumes:
+  jellyfin_config:
+    external: true
+    name: media-stack_jellyfin_config
+  jellyfin_cache:
+    external: true
+    name: media-stack_jellyfin_cache

@@ -16,6 +16,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 cd "$PROJECT_ROOT"
 
+# shellcheck source=media-stack-compose.sh
+source "${SCRIPT_DIR}/media-stack-compose.sh"
+
 overall_pass=true
 
 # ─── helpers ─────────────────────────────────────────────────────────────────
@@ -37,7 +40,7 @@ run_suite() {
 # ─── suite 1: nginx proxy domain regression ──────────────────────────────────
 
 run_suite "Nginx proxy domain regression" \
-  docker compose run --rm -T tests
+  compose_run_proxy_tests
 
 # ─── suite 2: volume permission regression ───────────────────────────────────
 

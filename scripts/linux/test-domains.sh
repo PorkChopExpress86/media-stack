@@ -5,7 +5,7 @@ set -euo pipefail
 WORKSPACE_DIR="${WORKSPACE_DIR:-/workspace}"
 LOG_PATH="${TEST_LOG_PATH:-${WORKSPACE_DIR}/test.log}"
 NPM_DB_PATH="${NPM_DB_PATH:-/npm-data/database.sqlite}"
-BASELINE_PATH="${BASELINE_PATH:-${WORKSPACE_DIR}/config/nginx-proxy-regression-baseline.json}"
+BASELINE_PATH="${BASELINE_PATH:-${WORKSPACE_DIR}/nginx-proxy/config/nginx-proxy-regression-baseline.json}"
 TEST_TIMEOUT_SECONDS="${TEST_TIMEOUT_SECONDS:-10}"
 TEST_DOMAIN="${TEST_DOMAIN:-}"
 

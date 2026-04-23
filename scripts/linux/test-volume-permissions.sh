@@ -6,6 +6,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 LOG_PATH="${VOLUME_PERMISSION_LOG_PATH:-${PROJECT_ROOT}/volume-permissions.log}"
 
+# shellcheck source=media-stack-compose.sh
+source "${SCRIPT_DIR}/media-stack-compose.sh"
+
 timestamp() {
   date '+%Y-%m-%d %H:%M:%S'
 }
@@ -26,7 +29,7 @@ require_command() {
 
 collect_mounts() {
   local container_ids
-  container_ids="$(cd "$PROJECT_ROOT" && docker compose ps -q)"
+  container_ids="$(compose_ps_ids)"
 
   if [[ -z "$container_ids" ]]; then
     log_line "[$(timestamp)] ERROR no compose containers found to inspect"

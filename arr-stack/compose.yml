@@ -1,0 +1,263 @@
+---
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  vpn:
+    image: qmcgaw/gluetun@sha256:725d3e51091dde4ca43e3e3f26e2e6d3d0ccc66821e92d505c3da04958f7d472
+    container_name: vpn
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    ports:
+      - 8888:8888/tcp
+      - 8388:8388/tcp
+      - 8389:8388/udp
+      - 7878:7878
+      - 8989:8989
+      - 9696:9696
+      - 1080:1080/tcp
+      - 6767:6767
+      - 8080:8080
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=1
+    volumes:
+      - gluetun_data:/gluetun
+      - ./scripts/linux/qb-port-sync.sh:/usr/local/bin/qb-port-sync.sh:ro
+    environment:
+      - VPN_SERVICE_PROVIDER=private internet access
+      - OPENVPN_USER=${vpn_username}
+      - OPENVPN_PASSWORD=${vpn_password}
+      - SERVER_REGIONS=CA Toronto
+      - TZ=${TZ:-America/Chicago}
+      - VPN_PORT_FORWARDING=on
+      - VPN_PORT_FORWARDING_UP_COMMAND=/bin/sh -c '/usr/local/bin/qb-port-sync.sh up "{{PORT}}" "{{VPN_INTERFACE}}"'
+      - VPN_PORT_FORWARDING_DOWN_COMMAND=/bin/sh -c '/usr/local/bin/qb-port-sync.sh down'
+    restart: always
+    logging: *default-logging
+    networks:
+      media_proxy:
+        aliases:
+          - vpn
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:9999"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr@sha256:c5de2a8758a05594319263e7691c1dce56899442ed1720d6eca216c0958f4caf
+    container_name: prowlarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ:-America/Chicago}
+    volumes:
+      - prowlarr_data:/config
+    restart: always
+    logging: *default-logging
+    network_mode: "service:vpn"
+    depends_on:
+      vpn:
+        condition: service_healthy
+
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr@sha256:7962759d99d7e125e108e0f5e7f3cdbcd36161776d058d1d9b7153b92ef1af9e
+    container_name: flaresolverr
+    environment:
+      - LOG_LEVEL=info
+      - LOG_HTML=false
+      - CAPTCHA_SOLVER=none
+      - TZ=${TZ:-America/Chicago}
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /run
+    restart: always
+    logging: *default-logging
+    network_mode: "service:vpn"
+    depends_on:
+      vpn:
+        condition: service_healthy
+
+  decluttarr:
+    image: ghcr.io/manimatter/decluttarr@sha256:1e93192e9477cb01591de2ddac12d503662e2659792448e811b74bdb58e07ae4
+    container_name: decluttarr
+    restart: always
+    logging: *default-logging
+    depends_on:
+      vpn:
+        condition: service_healthy
+    environment:
+      TZ: ${TZ:-America/Chicago}
+      PUID: 1000
+      PGID: 1000
+      LOG_LEVEL: INFO
+      TEST_RUN: "false"
+      TIMER: 60
+      REMOVE_FAILED_DOWNLOADS: true
+      REMOVE_FAILED_IMPORTS: true
+      REMOVE_METADATA_MISSING: true
+      REMOVE_ORPHANS: true
+      REMOVE_SLOW: true
+      REMOVE_STALLED: true
+      RADARR: >
+        - base_url: "http://vpn:7878"
+          api_key: "${RADARR_API_KEY}"
+      SONARR: >
+        - base_url: "http://vpn:8989"
+          api_key: "${SONARR_API_KEY}"
+      PROWLARR: >
+        - base_url: "http://vpn:9696"
+          api_key: "${PROWLARR_API_KEY}"
+      QBITTORRENT: >
+        - base_url: "http://vpn:8080"
+          username: "${QBITTORRENT_USER}"
+          password: "${QBITTORRENT_PASS}"
+    volumes:
+      - decluttarr_data:/config
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /run
+
+  radarr:
+    image: lscr.io/linuxserver/radarr@sha256:b01097ad2d948c9f5eca39eb60bb529e2e55b0738c4bf7db09383bef0abab59d
+    container_name: radarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ:-America/Chicago}
+    volumes:
+      - radarr_data:/config
+      - ${movies}:/movies
+      - ${other_movies}:/other_movies
+      - ${kids_movies}:/kids_movies
+      - ${qbittorrent_downloads}:/downloads
+    restart: always
+    logging: *default-logging
+    network_mode: "service:vpn"
+    depends_on:
+      vpn:
+        condition: service_healthy
+
+  sonarr:
+    image: lscr.io/linuxserver/sonarr@sha256:e6c9a091735fede0c2a205c69e7d4c2f0188eaf2bec7e42d8a26c017e5f2a910
+    container_name: sonarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ:-America/Chicago}
+    volumes:
+      - sonarr_data:/config
+      - ${tv_shows}:/tv_shows
+      - ${kids_tv_shows}:/kids_tv_shows
+      - ${other_shows}:/other_shows
+      - ${qbittorrent_downloads}:/downloads
+    restart: always
+    logging: *default-logging
+    network_mode: "service:vpn"
+    depends_on:
+      vpn:
+        condition: service_healthy
+
+  bazarr:
+    image: lscr.io/linuxserver/bazarr@sha256:7563f01bf27554df58e10544a4bb83479258883315a31cd1c929293e908144d0
+    container_name: bazarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ:-America/Chicago}
+    volumes:
+      - bazarr_data:/config
+      - ${movies}:/movies
+      - ${tv_shows}:/tv_shows
+      - ${kids_movies}:/kids_movies
+      - ${kids_tv_shows}:/kids_tv_shows
+    restart: always
+    logging: *default-logging
+    network_mode: "service:vpn"
+    depends_on:
+      vpn:
+        condition: service_healthy
+
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent@sha256:8f7a1da9644340c737e3211ecc910a416d4295076e6b2824a4afcd1f4e3576e2
+    container_name: qbittorrent
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ:-America/Chicago}
+      - WEBUI_PORT=8080
+    volumes:
+      - qbittorrent_data:/config
+      - ${qbittorrent_downloads}:/downloads
+    restart: always
+    logging: *default-logging
+    network_mode: "service:vpn"
+    depends_on:
+      vpn:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  qbittorrent-metrics:
+    image: python:3.12-alpine
+    container_name: qbittorrent_metrics
+    restart: always
+    logging: *default-logging
+    network_mode: "service:vpn"
+    depends_on:
+      vpn:
+        condition: service_healthy
+    volumes:
+      - node_exporter_textfile:/textfile
+      - ./scripts/linux/qbittorrent-metrics.py:/app/qbittorrent-metrics.py:ro
+    environment:
+      QB_WEBUI_URL: http://127.0.0.1:8080
+      QB_WEBUI_USER: ${QBITTORRENT_USER}
+      QB_WEBUI_PASSWORD: ${QBITTORRENT_PASS}
+      GLUETUN_HEALTH_URL: http://127.0.0.1:9999
+      METRICS_FILE: /textfile/qbittorrent.prom
+      POLL_INTERVAL: 30
+    command: ["python", "/app/qbittorrent-metrics.py"]
+
+networks:
+  media_proxy:
+    external: true
+    name: media_proxy
+
+volumes:
+  prowlarr_data:
+    external: true
+    name: media-stack_prowlarr_data
+  radarr_data:
+    external: true
+    name: media-stack_radarr_data
+  sonarr_data:
+    external: true
+    name: media-stack_sonarr_data
+  qbittorrent_data:
+    external: true
+    name: media-stack_qbittorrent_data
+  bazarr_data:
+    external: true
+    name: media-stack_bazarr_data
+  gluetun_data:
+    external: true
+    name: media-stack_gluetun_data
+  decluttarr_data:
+    external: true
+    name: media-stack_decluttarr_data
+  node_exporter_textfile:
+    external: true
+    name: media-stack_node_exporter_textfile

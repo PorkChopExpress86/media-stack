@@ -43,12 +43,12 @@ services:
     ports:
       - 8050:80
     volumes:
-      - ./data/derbynet:/var/lib/derbynet
-      - ./data/derbynet/nginx:/var/lib/nginx
-      - ./data/derbynet/nginx-log:/var/log/nginx
-      - ./data/derbynet/php84:/var/log/php84
-      - ./data/derbynet/run-nginx:/run/nginx
-      - ./data/derbynet/run:/var/run/php
+      - ./proxied-apps/data/derbynet:/var/lib/derbynet
+      - ./proxied-apps/data/derbynet/nginx:/var/lib/nginx
+      - ./proxied-apps/data/derbynet/nginx-log:/var/log/nginx
+      - ./proxied-apps/data/derbynet/php84:/var/log/php84
+      - ./proxied-apps/data/derbynet/run-nginx:/run/nginx
+      - ./proxied-apps/data/derbynet/run:/var/run/php
       - /etc/localtime:/etc/localtime:ro
       # edit passwords on host system
       # `sudo vim /var/lib/docker/volumes/faraday_derbyet_data/_data/config-roles.inc`
@@ -301,7 +301,7 @@ services:
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD}
     # extends:
-    #   file: config/hwaccel.transcoding.yml
+    #   file: ./immich/config/hwaccel.transcoding.yml
     #   service: nvenc # set to one of [nvenc, quicksync, rkmpp, vaapi, vaapi-wsl] for accelerated transcoding
     volumes:
       - immich_server_data:/data
@@ -328,14 +328,14 @@ services:
   immich-machine-learning:
     container_name: immich_machine_learning
     # For hardware acceleration, add one of -[armnn, cuda, openvino] to the image tag.
-    # Example tag: ${IMMICH_VERSION:-release}-cuda
-    image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION:-release}
+    # Example: set IMMICH_ML_VERSION=v2-cuda and enable service cuda below.
+    image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_ML_VERSION:-${IMMICH_VERSION:-release}}
     user: "1000:1000"
     # extends:
     # Uncomment this section for hardware acceleration - see:
     # https://immich.app/docs/features/ml-hardware-acceleration
-    # file: config/hwaccel.ml.yml
-    # service: cuda # set to one of [armnn, cuda, openvino, openvino-wsl]
+    #   file: ./immich/config/hwaccel.ml.yml
+    #   service: cuda # set to one of [armnn, cuda, openvino, openvino-wsl]
     # For WSL2 use a `-wsl` variant where applicable
     volumes:
       - model-cache:/cache
@@ -397,7 +397,7 @@ services:
     ports:
       - '5006:5006'
     volumes:
-      - ./data/budget:/data
+      - ./lan-apps/data/budget:/data
     restart: always
     logging: *default-logging
 
@@ -496,7 +496,7 @@ services:
     # ports:
     #   - "19132:19132/udp"
     volumes:
-      - ./data/survival:/data
+      - ./proxied-apps/data/survival:/data
     restart: unless-stopped
     logging: *default-logging
     stdin_open: true
@@ -520,7 +520,7 @@ services:
     # ports:
     #   - "19133:19132/udp"
     volumes:
-      - ./data/creative:/data
+      - ./proxied-apps/data/creative:/data
     restart: unless-stopped
     logging: *default-logging
     stdin_open: true
@@ -583,7 +583,7 @@ services:
     logging: *default-logging
     volumes:
       - prometheus_data:/prometheus
-      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.path=/prometheus
@@ -659,10 +659,10 @@ services:
       GF_PATHS_PROVISIONING: /etc/grafana/provisioning
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./config/grafana-datasource.yml:/etc/grafana/provisioning/datasources/prometheus.yml:ro
-      - ./config/grafana-dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
-      - ./config/grafana-media-stack-overview.json:/var/lib/grafana/dashboards/media-stack-overview.json:ro
-      - ./config/grafana-qbittorrent-vpn.json:/var/lib/grafana/dashboards/qbittorrent-vpn.json:ro
+      - ./monitoring/config/grafana-datasource.yml:/etc/grafana/provisioning/datasources/prometheus.yml:ro
+      - ./monitoring/config/grafana-dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
+      - ./monitoring/config/grafana-media-stack-overview.json:/var/lib/grafana/dashboards/media-stack-overview.json:ro
+      - ./monitoring/config/grafana-qbittorrent-vpn.json:/var/lib/grafana/dashboards/qbittorrent-vpn.json:ro
     depends_on:
       - prometheus
 

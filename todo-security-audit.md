@@ -118,7 +118,7 @@ _Audited: 2026-04-22 | Stack: media-stack (`docker-compose.yaml`)_
   - Action: review whether remote `docker attach` access is gated. If the daemon socket is reachable from non-admin users, this is a lateral movement path.
 
 - [ ] **Verify `.gitignore` protects all secret files before any `git push`**
-  - `.env` is gitignored. Confirm `data/derbynet/config-database.inc`, `data/derbynet/config-roles.inc` (contain DB credentials) are also excluded and not already tracked.
+  - `.env` is gitignored. Confirm `proxied-apps/data/derbynet/config-database.inc`, `proxied-apps/data/derbynet/config-roles.inc` (contain DB credentials) are also excluded and not already tracked.
   - Fix: run `git ls-files data/` to confirm no credential files are committed.
 
 ---

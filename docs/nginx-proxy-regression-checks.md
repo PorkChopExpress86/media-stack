@@ -27,7 +27,7 @@ The test service:
 
 - `Dockerfile.tests` — builds the lightweight test image
 - `docker-compose.yaml` — defines the `tests` service
-- `config/nginx-proxy-regression-baseline.json` — checked-in baseline of acceptable redirect targets
+- `nginx-proxy/config/nginx-proxy-regression-baseline.json` — checked-in baseline of acceptable redirect targets
 - `scripts/linux/test-domains.sh` — main test runner
 - `scripts/linux/run-tests-scheduled.sh` — wrapper for scheduled runs
 - `test.log` — append-only execution log in the repository root
@@ -82,7 +82,7 @@ Example:
 
 - `200`
 - `401`
-- `302` when both the status and `Location` header match an entry in `config/nginx-proxy-regression-baseline.json`
+- `302` when both the status and `Location` header match an entry in `nginx-proxy/config/nginx-proxy-regression-baseline.json`
 
 ### Failing conditions
 
@@ -106,7 +106,7 @@ This test now allows selected `302` redirects as healthy when they match the che
 
 That lets login and app-entry redirects pass without making all redirects automatically acceptable.
 
-If a service changes its expected redirect target in a legitimate way, update `config/nginx-proxy-regression-baseline.json` to reflect the new known-good behavior.
+If a service changes its expected redirect target in a legitimate way, update `nginx-proxy/config/nginx-proxy-regression-baseline.json` to reflect the new known-good behavior.
 
 ## Troubleshooting
 
@@ -120,7 +120,7 @@ The `TEST_DOMAIN` value must exactly match an enabled domain listed in Nginx Pro
 
 ### The test returns unexpected `302` failures
 
-Check the actual `Location` header returned by the app and compare it with `config/nginx-proxy-regression-baseline.json`. If the redirect changed intentionally, update the baseline.
+Check the actual `Location` header returned by the app and compare it with `nginx-proxy/config/nginx-proxy-regression-baseline.json`. If the redirect changed intentionally, update the baseline.
 
 ### The log file is not updating
 

@@ -1,0 +1,121 @@
+---
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  watchtower:
+    image: containrrr/watchtower@sha256:6dd50763bbd632a83cb154d5451700530d1e44200b268a4e9488fefdfcf2b038
+    container_name: watchtower
+    user: "1000:1000"
+    group_add:
+      - "${DOCKER_GID}"
+    restart: always
+    logging: *default-logging
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_NOTIFICATIONS=email
+      - WATCHTOWER_NOTIFICATION_EMAIL_FROM=${email}
+      - WATCHTOWER_NOTIFICATION_EMAIL_TO=${email}
+      - WATCHTOWER_NOTIFICATION_EMAIL_SERVER=smtp.gmail.com
+      - WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PORT=587
+      - WATCHTOWER_NOTIFICATION_EMAIL_SERVER_USER=${email}
+      - WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PASSWORD=${gmail_app_passwd}
+      - WATCHTOWER_NOTIFICATION_EMAIL_DELAY=2
+      - DOCKER_API_VERSION=1.52
+    command: --cleanup --interval 21600 --monitor-only
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: prometheus
+    restart: always
+    logging: *default-logging
+    volumes:
+      - prometheus_data:/prometheus
+      - ./monitoring/config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+    networks:
+      - monitoring_internal
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: node-exporter
+    restart: always
+    logging: *default-logging
+    read_only: true
+    tmpfs:
+      - /tmp
+    command:
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --path.rootfs=/host
+      - --collector.textfile.directory=/textfile
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/host:ro,rslave
+      - node_exporter_textfile:/textfile:ro
+    networks:
+      - monitoring_internal
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: cadvisor
+    privileged: true
+    restart: always
+    logging: *default-logging
+    read_only: true
+    tmpfs:
+      - /tmp
+    volumes:
+      - /:/rootfs:ro,rslave
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+    networks:
+      - monitoring_internal
+
+  grafana:
+    image: grafana/grafana:11.3.1
+    container_name: grafana
+    restart: always
+    logging: *default-logging
+    ports:
+      - 3000:3000
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_PATHS_PROVISIONING: /etc/grafana/provisioning
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/config/grafana-datasource.yml:/etc/grafana/provisioning/datasources/prometheus.yml:ro
+      - ./monitoring/config/grafana-dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
+      - ./monitoring/config/grafana-media-stack-overview.json:/var/lib/grafana/dashboards/media-stack-overview.json:ro
+      - ./monitoring/config/grafana-qbittorrent-vpn.json:/var/lib/grafana/dashboards/qbittorrent-vpn.json:ro
+    depends_on:
+      - prometheus
+    networks:
+      - monitoring_internal
+
+networks:
+  monitoring_internal:
+    internal: true
+
+volumes:
+  prometheus_data:
+    external: true
+    name: media-stack_prometheus_data
+  grafana_data:
+    external: true
+    name: media-stack_grafana_data
+  node_exporter_textfile:
+    external: true
+    name: media-stack_node_exporter_textfile

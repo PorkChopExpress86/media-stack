@@ -1,0 +1,113 @@
+---
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  derbynet:
+    container_name: derbynet
+    image: jeffpiazza/derbynet_server@sha256:cf57ec34d5207f842ad961edfb9929b145dac6f4f2691a8396859e68d4e84ccd
+    user: "1000:1000"
+    group_add:
+      - "101"
+      - "0"
+    ports:
+      - 8050:80
+    volumes:
+      - ./proxied-apps/data/derbynet:/var/lib/derbynet
+      - ./proxied-apps/data/derbynet/nginx:/var/lib/nginx
+      - ./proxied-apps/data/derbynet/nginx-log:/var/log/nginx
+      - ./proxied-apps/data/derbynet/php84:/var/log/php84
+      - ./proxied-apps/data/derbynet/run-nginx:/run/nginx
+      - ./proxied-apps/data/derbynet/run:/var/run/php
+      - /etc/localtime:/etc/localtime:ro
+    restart: always
+    logging: *default-logging
+    networks:
+      media_proxy:
+        aliases:
+          - derbynet
+
+  audiobookshelf:
+    image: ghcr.io/advplyr/audiobookshelf@sha256:a44ed89b3e845faa1f7d353f2cc89b2fcd8011737dd14075fa963cf9468da3a5
+    user: "1000:1000"
+    ports:
+      - 13378:80
+    volumes:
+      - audiobookshelf_data:/config
+      - audiobookshelf_metadata:/metadata
+      - ${audiobooks}:/audiobooks
+      - ${podcasts}:/podcasts
+    environment:
+      - TZ=${TZ:-America/Chicago}
+    restart: always
+    logging: *default-logging
+    networks:
+      media_proxy:
+        aliases:
+          - audiobookshelf
+
+  minecraft-survival:
+    image: itzg/minecraft-bedrock-server@sha256:406b421c5394d7fc957a2b51ca30ebd38dfe06bdee70b817ed86ac16c7bccc6b
+    container_name: minecraft-survival
+    user: "1000:1000"
+    environment:
+      EULA: "TRUE"
+      GAMEMODE: survival
+      DIFFICULTY: easy
+      PVP: "true"
+      ALLOW_CHEATS: "false"
+      MAX_PLAYERS: 10
+      LEVEL_NAME: "Survival World"
+      LEVEL_SEED: "42"
+      LEVEL_TYPE: "DEFAULT"
+    volumes:
+      - ./proxied-apps/data/survival:/data
+    restart: unless-stopped
+    logging: *default-logging
+    stdin_open: true
+    tty: true
+    networks:
+      media_proxy:
+        aliases:
+          - minecraft-survival
+
+  minecraft-creative:
+    image: itzg/minecraft-bedrock-server@sha256:406b421c5394d7fc957a2b51ca30ebd38dfe06bdee70b817ed86ac16c7bccc6b
+    container_name: minecraft-creative
+    user: "1000:1000"
+    environment:
+      EULA: "TRUE"
+      GAMEMODE: creative
+      DIFFICULTY: peaceful
+      PVP: "false"
+      ALLOW_CHEATS: "true"
+      MAX_PLAYERS: 10
+      LEVEL_NAME: "Creative World"
+      LEVEL_SEED: "42"
+      LEVEL_TYPE: "DEFAULT"
+    volumes:
+      - ./proxied-apps/data/creative:/data
+    restart: unless-stopped
+    logging: *default-logging
+    stdin_open: true
+    tty: true
+    networks:
+      media_proxy:
+        aliases:
+          - minecraft-creative
+
+networks:
+  media_proxy:
+    external: true
+    name: media_proxy
+
+volumes:
+  audiobookshelf_data:
+    external: true
+    name: media-stack_audiobookshelf_data
+  audiobookshelf_metadata:
+    external: true
+    name: media-stack_audiobookshelf_metadata

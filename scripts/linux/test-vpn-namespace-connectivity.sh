@@ -6,6 +6,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 LOG_PATH="${VPN_NAMESPACE_LOG_PATH:-${PROJECT_ROOT}/vpn-namespace-connectivity.log}"
 
+# shellcheck source=media-stack-compose.sh
+source "${SCRIPT_DIR}/media-stack-compose.sh"
+
 timestamp() {
   date '+%Y-%m-%d %H:%M:%S'
 }
@@ -26,8 +29,7 @@ require_command() {
 
 get_service_cid() {
   local service="$1"
-  cd "$PROJECT_ROOT"
-  docker compose ps -q "$service" 2>/dev/null || true
+  compose_service_id "$service"
 }
 
 check_namespace_alignment() {
@@ -56,8 +58,12 @@ check_namespace_alignment() {
 http_status_from_service() {
   local service="$1"
   local url="$2"
-  cd "$PROJECT_ROOT"
-  docker compose exec -T "$service" sh -c "curl -sS -I --max-time 15 '$url' | sed -n '1p'" 2>/dev/null | awk '{print $2}'
+
+  if [[ "${MEDIA_STACK_MODE:-legacy}" == "modular" ]]; then
+    compose_cmd_for_stack arr-stack exec -T "$service" sh -c "curl -sS -I --max-time 15 '$url' | sed -n '1p'" 2>/dev/null | awk '{print $2}'
+  else
+    compose_cmd_for_stack "$LEGACY_PROJECT_NAME" exec -T "$service" sh -c "curl -sS -I --max-time 15 '$url' | sed -n '1p'" 2>/dev/null | awk '{print $2}'
+  fi
 }
 
 check_http_status() {

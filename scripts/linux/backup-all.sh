@@ -23,9 +23,15 @@ BACKUP_GZIP_LEVEL="${BACKUP_GZIP_LEVEL:-6}"
 # Compression program preference: auto, pigz, or gzip.
 BACKUP_COMPRESSOR="${BACKUP_COMPRESSOR:-auto}"
 
-# Load .env for DB credentials and bind-mount paths
-ENV_FILE="${PROJECT_DIR}/.env"
-if [[ -f "$ENV_FILE" ]]; then
+# shellcheck source=media-stack-compose.sh
+source "${SCRIPT_DIR}/media-stack-compose.sh"
+
+# Load env files for DB credentials, bind-mount paths, and backup settings.
+load_env_file() {
+    local env_file="$1"
+
+    [[ -f "$env_file" ]] || return 1
+
     while IFS= read -r line || [[ -n "$line" ]]; do
         line="${line%$'\r'}"
 
@@ -47,10 +53,22 @@ if [[ -f "$ENV_FILE" ]]; then
 
             export "$key=$value"
         fi
-    done < "$ENV_FILE"
+    done < "$env_file"
+}
+
+ENV_FILE="${PROJECT_DIR}/.env"
+if [[ -f "$ENV_FILE" ]]; then
+    load_env_file "$ENV_FILE"
 else
     echo "ERROR: .env file not found at $ENV_FILE"
     exit 1
+fi
+
+if [[ "${MEDIA_STACK_MODE:-legacy}" == "modular" ]]; then
+    while IFS= read -r stack; do
+        [[ -n "$stack" ]] || continue
+        load_env_file "${PROJECT_DIR}/${stack}/.env" || true
+    done < <(active_stack_names)
 fi
 
 # --- Helper functions --------------------------------------------------------
@@ -160,25 +178,19 @@ cd "$COMPOSE_DIR"
 # Always prefer this stack's project name from .env to avoid matching
 # unrelated compose projects that may also be running on the same host.
 PROJECT_NAME="${COMPOSE_PROJECT_NAME:-media-stack}"
-log "Project name: $PROJECT_NAME"
+log "Compose mode: ${MEDIA_STACK_MODE:-legacy}"
 
-VOL_KEYS=$(docker compose config --volumes 2>/dev/null || true)
+VOL_KEYS=$(compose_volume_keys)
 if [[ -z "$VOL_KEYS" ]]; then
     log "WARNING: No compose volumes found. Skipping volume backup."
 else
     for VOL_KEY in $VOL_KEYS; do
-        # Find actual Docker volume name
-        VOL_NAME=$(docker volume ls -q \
-            --filter "label=com.docker.compose.project=${PROJECT_NAME}" \
-            --filter "label=com.docker.compose.volume=${VOL_KEY}" 2>/dev/null | head -1)
+        VOL_NAME="$(compose_volume_name "$VOL_KEY")"
 
-        if [[ -z "$VOL_NAME" ]]; then
-            VOL_NAME="${PROJECT_NAME}_${VOL_KEY}"
-            if ! docker volume inspect "$VOL_NAME" > /dev/null 2>&1; then
-                log "  SKIP: Volume not found for key '$VOL_KEY'"
-                printf "%-35s | %-10s | %-8s | %-12s | %s\n" "$VOL_KEY" "SKIP" "volume" "--" "--" >> "$REPORT_FILE"
-                continue
-            fi
+        if ! docker volume inspect "$VOL_NAME" > /dev/null 2>&1; then
+            log "  SKIP: Volume not found for key '$VOL_KEY' ($VOL_NAME)"
+            printf "%-35s | %-10s | %-8s | %-12s | %s\n" "$VOL_KEY" "SKIP" "volume" "--" "--" >> "$REPORT_FILE"
+            continue
         fi
 
         log "  Backing up volume: $VOL_KEY ($VOL_NAME)"
@@ -212,10 +224,10 @@ log "--- Phase 2: Bind-mounted data ---"
 PHASE2_START=$SECONDS
 
 declare -A BIND_MOUNTS=(
-    ["derbynet"]="${PROJECT_DIR}/data/derbynet"
-    ["budget"]="${PROJECT_DIR}/data/budget"
-    ["minecraft-survival"]="${PROJECT_DIR}/data/survival"
-    ["minecraft-creative"]="${PROJECT_DIR}/data/creative"
+    ["derbynet"]="${PROJECT_DIR}/proxied-apps/data/derbynet"
+    ["budget"]="${PROJECT_DIR}/lan-apps/data/budget"
+    ["minecraft-survival"]="${PROJECT_DIR}/proxied-apps/data/survival"
+    ["minecraft-creative"]="${PROJECT_DIR}/proxied-apps/data/creative"
 )
 
 for MOUNT_NAME in "${!BIND_MOUNTS[@]}"; do

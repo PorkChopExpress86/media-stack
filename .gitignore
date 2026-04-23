@@ -1,6 +1,9 @@
 # Secrets
 .env
 .env.linux
+**/.env
+**/.env.*
+!**/.env.example
 
 # Logs
 *.log
@@ -17,11 +20,14 @@ scripts/backup/
 # Ignore all contents but keep the directory via .gitkeep
 data/**/*
 !data/**/.gitkeep
+lan-apps/data/**/*
+!lan-apps/data/**/.gitkeep
+proxied-apps/data/**/*
+!proxied-apps/data/**/.gitkeep
 
 # Legacy / Specific Data Ignores (mostly covered by data/ above)
 pia-shared/
 .pihole/
-immich
 pinchflat
 derbynet_data/
 budget_data/

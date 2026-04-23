@@ -1,0 +1,92 @@
+---
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  actual_server:
+    container_name: actual_server
+    image: docker.io/actualbudget/actual-server@sha256:b0e732e2c41b3dc468a71548e88ef76d3f0c157fc43d15fa05d14ec1c5747e1e
+    user: "1000:1000"
+    ports:
+      - '5006:5006'
+    volumes:
+      - ./lan-apps/data/budget:/data
+    restart: always
+    logging: *default-logging
+
+  pinchflat:
+    image: ghcr.io/kieraneglin/pinchflat@sha256:01b4f98aabaf3f5fe394213f7a32578c9e84e42080f52e2f8334021a4473b202
+    container_name: pinchflat
+    user: "1000:1000"
+    environment:
+      - TZ=${TZ:-America/Chicago}
+    ports:
+      - '8945:8945'
+    volumes:
+      - pinchflat_data:/config
+      - "${pinchflat_downloads}:/downloads"
+    restart: always
+    logging: *default-logging
+
+  plex:
+    image: lscr.io/linuxserver/plex@sha256:e5c7c283b242966416a4bed2d666acf6f3fb8f957c704be8333f8dc987364825
+    container_name: plex
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ:-America/Chicago}
+      - VERSION=docker
+      - PLEX_CLAIM=${plex_claim}
+    volumes:
+      - plex_data:/config
+      - ${movies}:/media/movies
+      - ${tv_shows}:/media/tv_shows
+      - ${kids_movies}:/media/kids_movies
+      - ${kids_tv_shows}:/media/kids_tv_shows
+      - ${other_movies}:/media/other_movies
+      - ${other_shows}:/media/other_shows
+      - ${music}:/media/music
+      - ${pinchflat_downloads}:/pinchflat
+      - ${home_movies}:/media/home_movies
+    devices:
+      - /dev/dri:/dev/dri
+    ports:
+      - 32400:32400
+    restart: always
+    logging: *default-logging
+
+  homeassistant:
+    image: ghcr.io/home-assistant/home-assistant@sha256:ae0800c81fea16bc1241ce03bddb9c6260566e90f58b09d3e5a629e4f68bdc0b
+    container_name: homeassistant
+    environment:
+      - TZ=${TZ:-America/Chicago}
+    network_mode: host
+    volumes:
+      - homeassistant_data:/config
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 2g
+    mem_reservation: 256m
+    cpus: "2.0"
+    restart: always
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8123"]
+      interval: 60s
+      timeout: 15s
+      retries: 5
+      start_period: 120s
+
+volumes:
+  pinchflat_data:
+    external: true
+    name: media-stack_pinchflat_data
+  plex_data:
+    external: true
+    name: media-stack_plex_data
+  homeassistant_data:
+    external: true
+    name: media-stack_homeassistant_data

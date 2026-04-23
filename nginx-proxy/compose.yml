@@ -1,0 +1,71 @@
+---
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  nginx:
+    container_name: nginx
+    image: 'jc21/nginx-proxy-manager@sha256:2aa69b382a384b676c0d4f1d6f2eac40ecd478fcf7af1cfb3f9f1d3cd0c81e12'
+    restart: always
+    logging: *default-logging
+    ports:
+      - 80:80
+      - 443:443
+      - 127.0.0.1:81:81
+      - 19132:19132/udp
+      - 19133:19133/udp
+    environment:
+      DISABLE_IPV6: 'true'
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - nginx_data:/data
+      - letsencrypt:/etc/letsencrypt
+    networks:
+      media_proxy:
+        aliases:
+          - nginx
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:81"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.tests
+    depends_on:
+      nginx:
+        condition: service_healthy
+    environment:
+      - NPM_DB_PATH=/npm-data/database.sqlite
+      - TEST_LOG_PATH=/workspace/test.log
+      - TEST_TIMEOUT_SECONDS=${TEST_TIMEOUT_SECONDS:-10}
+      - TEST_DOMAIN=${TEST_DOMAIN:-}
+    user: "1000:1000"
+    volumes:
+      - .:/workspace
+      - nginx_data:/npm-data:ro
+    working_dir: /workspace
+    restart: "no"
+    logging: *default-logging
+    networks:
+      - media_proxy
+
+networks:
+  media_proxy:
+    external: true
+    name: media_proxy
+
+volumes:
+  nginx_data:
+    external: true
+    name: media-stack_nginx_data
+  letsencrypt:
+    external: true
+    name: media-stack_letsencrypt
