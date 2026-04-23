@@ -1,0 +1,12 @@
+[Unit]
+Description=Media Stack regression tests (nginx proxy + volume permissions)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/mnt/samsung/Docker/MediaServer
+ExecStart=/usr/bin/bash /mnt/samsung/Docker/MediaServer/scripts/linux/run-regression-tests.sh
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=media-stack-regression
