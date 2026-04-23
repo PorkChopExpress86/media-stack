@@ -6,28 +6,6 @@ x-logging: &default-logging
     max-file: "3"
 
 services:
-  watchtower:
-    image: containrrr/watchtower@sha256:6dd50763bbd632a83cb154d5451700530d1e44200b268a4e9488fefdfcf2b038
-    container_name: watchtower
-    user: "1000:1000"
-    group_add:
-      - "${DOCKER_GID}"
-    restart: always
-    logging: *default-logging
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      - WATCHTOWER_NOTIFICATIONS=email
-      - WATCHTOWER_NOTIFICATION_EMAIL_FROM=${email}
-      - WATCHTOWER_NOTIFICATION_EMAIL_TO=${email}
-      - WATCHTOWER_NOTIFICATION_EMAIL_SERVER=smtp.gmail.com
-      - WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PORT=587
-      - WATCHTOWER_NOTIFICATION_EMAIL_SERVER_USER=${email}
-      - WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PASSWORD=${gmail_app_passwd}
-      - WATCHTOWER_NOTIFICATION_EMAIL_DELAY=2
-      - DOCKER_API_VERSION=1.52
-    command: --cleanup --interval 21600 --monitor-only
-
   prometheus:
     image: prom/prometheus:v2.54.1
     container_name: prometheus
