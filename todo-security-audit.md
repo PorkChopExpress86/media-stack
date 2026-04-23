@@ -72,7 +72,7 @@ _Audited: 2026-04-22 | Re-reviewed: 2026-04-23 against modular compose stacks_
   - `NET_ADMIN` grants network namespace manipulation, routing table changes, and firewall modification. If gluetun is compromised, it can redirect all VPN-routed container traffic.
   - Action: review gluetun changelog for `CAP_NET_ADMIN` decomposition. Pin to the `cap_drop: [ALL]` + minimal caps pattern once gluetun supports it.
 
-- [ ] **Missing healthcheck on `pinchflat`**
+- [x] **Missing healthcheck on `pinchflat`**
   - All other services that were missing healthchecks (`derbynet`, `radarr`, `sonarr`, `bazarr`, `prowlarr`, `flaresolverr`, `decluttarr`, `plex`, `homeassistant`, `actual_server`, `audiobookshelf`) now have them. Only `pinchflat` (`lan-apps/compose.yml`) is still missing one.
   - Fix: add an HTTP healthcheck against `http://127.0.0.1:8945`.
 

@@ -42,6 +42,12 @@ services:
       - "${pinchflat_downloads}:/downloads"
     restart: always
     logging: *default-logging
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:8945"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   plex:
     image: lscr.io/linuxserver/plex@sha256:e5c7c283b242966416a4bed2d666acf6f3fb8f957c704be8333f8dc987364825
