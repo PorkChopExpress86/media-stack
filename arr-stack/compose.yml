@@ -9,8 +9,14 @@ services:
   vpn:
     image: qmcgaw/gluetun@sha256:725d3e51091dde4ca43e3e3f26e2e6d3d0ccc66821e92d505c3da04958f7d472
     container_name: vpn
+    cap_drop:
+      - ALL
     cap_add:
       - NET_ADMIN
+      - CHOWN
+      - DAC_OVERRIDE
+      - SETUID
+      - SETGID
     devices:
       - /dev/net/tun:/dev/net/tun
     ports:

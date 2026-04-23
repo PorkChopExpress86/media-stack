@@ -66,9 +66,9 @@ _Audited: 2026-04-22 | Re-reviewed: 2026-04-23 against modular compose stacks_
 
 ## 🟡 MEDIUM
 
-- [ ] **`vpn` — `cap_add: NET_ADMIN` is overly broad**
-  - `NET_ADMIN` grants network namespace manipulation, routing table changes, and firewall modification. If gluetun is compromised, it can redirect all VPN-routed container traffic.
-  - Action: review gluetun changelog for `CAP_NET_ADMIN` decomposition. Pin to the `cap_drop: [ALL]` + minimal caps pattern once gluetun supports it.
+- [x] **`vpn` — `cap_add: NET_ADMIN` is overly broad**
+  - NET_ADMIN cannot be decomposed — gluetun needs it for iptables (killswitch), routing, and interface management. No upstream decomposition planned.
+  - **Hardened 2026-04-23**: Added `cap_drop: [ALL]` + explicit `cap_add` list. Gluetun requires: `NET_ADMIN` (networking), `CHOWN` (config file ownership), `DAC_OVERRIDE` (write to /etc/openvpn/), `SETUID`/`SETGID` (OpenVPN privilege drop to nonrootuser). All default Docker caps (NET_BIND_SERVICE, AUDIT_WRITE, KILL, etc.) are now dropped.
 
 - [x] **Missing healthcheck on `pinchflat`**
   - All other services that were missing healthchecks (`derbynet`, `radarr`, `sonarr`, `bazarr`, `prowlarr`, `flaresolverr`, `decluttarr`, `plex`, `homeassistant`, `actual_server`, `audiobookshelf`) now have them. Only `pinchflat` (`lan-apps/compose.yml`) is still missing one.
