@@ -1,5 +1,5 @@
 # Security Audit — Remaining Actions
-_Audited: 2026-04-22 | Stack: media-stack (`docker-compose.yaml`)_
+_Audited: 2026-04-22 | Re-reviewed: 2026-04-23 against modular compose stacks_
 
 ---
 
@@ -8,7 +8,7 @@ _Audited: 2026-04-22 | Stack: media-stack (`docker-compose.yaml`)_
 - [x] **`homeassistant` — `network_mode: host` researched and retained (compensating controls added)**
   - **Finding**: `network_mode: host` is the **officially documented and recommended** Docker configuration for HomeKit Bridge. HomeKit uses mDNS (UDP multicast `224.0.0.251:5353`) for both initial pairing and ongoing keep-alive with the Apple home hub. Docker bridge networks do not pass multicast. The alternative (`advertise_ip` + avahi reflector) is secondary and has known pairing instability — unacceptable for door lock control.
   - **Decision**: Retain `network_mode: host`. The risk surface is bounded: HA is already the home automation hub; it legitimately needs LAN access.
-  - **Compensating controls applied** (in `docker-compose.yaml`):
+  - **Compensating controls applied** (in `lan-apps/compose.yml`):
     - Added `security_opt: [no-new-privileges:true]` — prevents privilege escalation from within the container
     - Added service-level `mem_limit`, `mem_reservation`, and `cpus` — memory capped at 2 GB, CPU at 2 cores (bounds blast radius of misbehavior)
     - Added `healthcheck` on `http://localhost:8123` — Docker auto-restarts on failure, keeping locks/lights responsive
@@ -17,12 +17,10 @@ _Audited: 2026-04-22 | Stack: media-stack (`docker-compose.yaml`)_
   - **UFW**: `scripts/fix_homekit_firewall.sh` already opens ports 21064/tcp and 5353/udp. Verify these rules survive reboots with `sudo ufw status numbered`.
 
 - [x] **`derbynet`, `actual_server`, `audiobookshelf`, `pinchflat` — running as root**
-  - None of these services define `user:` or `PUID`/`PGID`. All processes run as UID 0.
-  - Fix: add `user: "1000:1000"` (or the image's intended non-root user) to each service definition. Validate with `docker inspect <container> --format '{{.Config.User}}'`.
+  - All services now have `user: "1000:1000"` in their respective modular compose files (`proxied-apps/compose.yml`, `lan-apps/compose.yml`). Validated 2026-04-23.
 
 - [x] **`immich-server` and `immich-machine-learning` — running as root**
-  - Neither service specifies a `user:`. Immich supports `PUID`/`PGID` env vars.
-  - Fix: add `PUID=1000` / `PGID=1000` env vars and verify ownership on `${UPLOAD_LOCATION}` and `${DB_DATA_LOCATION}`.
+  - Both services now have `user: "1000:1000"` in `immich/compose.yml`. Validated 2026-04-23.
 
 ---
 
@@ -54,8 +52,8 @@ _Audited: 2026-04-22 | Stack: media-stack (`docker-compose.yaml`)_
   - Fix: confirm `.env` has a strong random value (`openssl rand -hex 32`). Rotate if unsure.
 
 - [x] **No `read_only: true` on stateless services**
-  - `flaresolverr`, `decluttarr`, `redis`, `immich-machine-learning` write no persistent state and can all run read-only with explicit `tmpfs` mounts.
-  - Fix: add `read_only: true` + `tmpfs: [/tmp, /run]` to each of these services.
+  - `decluttarr`, `redis`, `immich-machine-learning` are confirmed read-only with `tmpfs` mounts.
+  - `flaresolverr` had `tmpfs` entries but `read_only: true` was dropped during the modular migration — **restored 2026-04-23** in `arr-stack/compose.yml`.
 
 - [x] **No resource limits on any service**
   - `homeassistant` now has Compose-enforced CPU and memory caps using service-level `cpus`, `mem_limit`, and `mem_reservation`.
@@ -63,7 +61,8 @@ _Audited: 2026-04-22 | Stack: media-stack (`docker-compose.yaml`)_
 
 - [ ] **`watchtower` — docker.sock access is a container escape vector**
   - Even though `watchtower` is hardened (`user: "1000:1000"`, `group_add: DOCKER_GID`, `--monitor-only`), docker.sock access grants full container-lifecycle control if the process is compromised.
-  - Action: confirm `--monitor-only` flag is permanent; evaluate switching to Renovate + Dependabot for image updates so docker.sock access can be removed entirely.
+  - `--monitor-only` flag is confirmed present in `monitoring/compose.yml:29`.
+  - Action: evaluate switching to Renovate + Dependabot for image updates so docker.sock access can be removed entirely.
 
 ---
 
@@ -73,9 +72,9 @@ _Audited: 2026-04-22 | Stack: media-stack (`docker-compose.yaml`)_
   - `NET_ADMIN` grants network namespace manipulation, routing table changes, and firewall modification. If gluetun is compromised, it can redirect all VPN-routed container traffic.
   - Action: review gluetun changelog for `CAP_NET_ADMIN` decomposition. Pin to the `cap_drop: [ALL]` + minimal caps pattern once gluetun supports it.
 
-- [ ] **Missing healthchecks on key services**
-  - No `healthcheck:` defined for: `derbynet`, `radarr`, `sonarr`, `bazarr`, `prowlarr`, `flaresolverr`, `decluttarr`, `plex`, `homeassistant`, `pinchflat`, `actual_server`, `audiobookshelf`.
-  - Fix: add minimal TCP or HTTP healthchecks so Docker restarts truly broken containers and the regression suite can gate on `service_healthy`.
+- [ ] **Missing healthcheck on `pinchflat`**
+  - All other services that were missing healthchecks (`derbynet`, `radarr`, `sonarr`, `bazarr`, `prowlarr`, `flaresolverr`, `decluttarr`, `plex`, `homeassistant`, `actual_server`, `audiobookshelf`) now have them. Only `pinchflat` (`lan-apps/compose.yml`) is still missing one.
+  - Fix: add an HTTP healthcheck against `http://127.0.0.1:8945`.
 
 - [ ] **`minecraft-creative` — `ALLOW_CHEATS: "true"` on a network-accessible server**
   - Cheats enabled on a server exposed to the LAN (via nginx UDP ports 19133) allows any authenticated player to run game-level commands.
@@ -83,11 +82,11 @@ _Audited: 2026-04-22 | Stack: media-stack (`docker-compose.yaml`)_
 
 - [ ] **`plex` — `plex_claim` token in `.env`**
   - `PLEX_CLAIM` tokens expire in 4 minutes and are single-use, but if an old value lingers in `.env` it could be probed.
-  - Fix: after initial claim succeeds, remove `PLEX_CLAIM` from `.env` and the service definition.
+  - Fix: after initial claim succeeds, remove `PLEX_CLAIM` from `.env` and the service definition (`lan-apps/compose.yml:54`).
 
 - [ ] **`immich-server` — uses `IMMICH_VERSION=v2` floating tag in `.env`**
-  - Floating version tags can pull unexpected breaking changes. `docker-compose.yaml` pins individual service images by digest, but if `.env` overrides `IMMICH_VERSION`, a `docker compose pull` can advance to an untested release.
-  - Fix: pin `IMMICH_VERSION` to a specific release tag (e.g., `v2.3.4`) and update intentionally. Align with the digest pins in `docker-compose.yaml`.
+  - Floating version tags can pull unexpected breaking changes. `immich/compose.yml` defers to `${IMMICH_VERSION:-release}`, so a `docker compose pull` can advance to an untested release.
+  - Fix: pin `IMMICH_VERSION` to a specific release tag (e.g., `v2.3.4`) and update intentionally.
 
 - [ ] **`database` (Postgres) — `DB_USERNAME=postgres` is the default superuser**
   - Running Immich as the `postgres` superuser is unnecessary and widens blast radius if the app is compromised.
@@ -98,7 +97,7 @@ _Audited: 2026-04-22 | Stack: media-stack (`docker-compose.yaml`)_
 ## 🔵 LOW / HARDENING
 
 - [ ] **Add `no-new-privileges: true` to all services**
-  - Prevents setuid/setgid escalation within containers. Has no runtime impact on the services in this stack.
+  - Prevents setuid/setgid escalation within containers. Has no runtime impact on the services in this stack. Currently only `homeassistant` (`lan-apps/compose.yml`) has this.
   - Fix: add `security_opt: [no-new-privileges:true]` globally or per-service.
 
 - [ ] **Add `cap_drop: [ALL]` + minimal `cap_add` to non-root services**
@@ -117,10 +116,6 @@ _Audited: 2026-04-22 | Stack: media-stack (`docker-compose.yaml`)_
   - These flags keep a TTY attached to the container, which allows `docker attach` to drop into a server console as the container user.
   - Action: review whether remote `docker attach` access is gated. If the daemon socket is reachable from non-admin users, this is a lateral movement path.
 
-- [ ] **Verify `.gitignore` protects all secret files before any `git push`**
-  - `.env` is gitignored. Confirm `proxied-apps/data/derbynet/config-database.inc`, `proxied-apps/data/derbynet/config-roles.inc` (contain DB credentials) are also excluded and not already tracked.
-  - Fix: run `git ls-files data/` to confirm no credential files are committed.
-
 ---
 
 ## ✅ Already Hardened (no action needed)
@@ -129,6 +124,8 @@ _Audited: 2026-04-22 | Stack: media-stack (`docker-compose.yaml`)_
   - Prometheus, node-exporter, cAdvisor, and Grafana are deployed and healthy.
   - A qBittorrent metrics sidecar now writes Prometheus textfile metrics for download speed, upload speed, torrent queue state, and Gluetun health.
   - Grafana provisions the media overview dashboard plus a dedicated qBittorrent/VPN dashboard.
+
+- [x] **`proxied-apps/data/` secret files gitignored** — `proxied-apps/data/**/*` is excluded; only `.gitkeep` is tracked. DerbyNet credential files are not committed.
 
 - `watchtower` — non-root (`user: "1000:1000"`, `group_add: DOCKER_GID`), `--monitor-only`
 - `jellyfin` — non-root (`user: "1000:1000"`, `group_add` for render/video devices)

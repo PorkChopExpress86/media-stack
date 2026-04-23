@@ -65,6 +65,12 @@ services:
     depends_on:
       vpn:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:9696/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   flaresolverr:
     image: ghcr.io/flaresolverr/flaresolverr@sha256:7962759d99d7e125e108e0f5e7f3cdbcd36161776d058d1d9b7153b92ef1af9e
@@ -76,6 +82,7 @@ services:
       - TZ=${TZ:-America/Chicago}
     read_only: true
     tmpfs:
+      - /app/.local:uid=1000,gid=1000,mode=775
       - /tmp
       - /run
     restart: always
@@ -84,6 +91,12 @@ services:
     depends_on:
       vpn:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:8191"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   decluttarr:
     image: ghcr.io/manimatter/decluttarr@sha256:1e93192e9477cb01591de2ddac12d503662e2659792448e811b74bdb58e07ae4
@@ -92,6 +105,14 @@ services:
     logging: *default-logging
     depends_on:
       vpn:
+        condition: service_healthy
+      qbittorrent:
+        condition: service_healthy
+      prowlarr:
+        condition: service_healthy
+      radarr:
+        condition: service_healthy
+      sonarr:
         condition: service_healthy
     environment:
       TZ: ${TZ:-America/Chicago}
@@ -107,24 +128,31 @@ services:
       REMOVE_SLOW: true
       REMOVE_STALLED: true
       RADARR: >
-        - base_url: "http://vpn:7878"
+        - base_url: "http://127.0.0.1:7878"
           api_key: "${RADARR_API_KEY}"
       SONARR: >
-        - base_url: "http://vpn:8989"
+        - base_url: "http://127.0.0.1:8989"
           api_key: "${SONARR_API_KEY}"
       PROWLARR: >
-        - base_url: "http://vpn:9696"
+        - base_url: "http://127.0.0.1:9696"
           api_key: "${PROWLARR_API_KEY}"
       QBITTORRENT: >
-        - base_url: "http://vpn:8080"
+        - base_url: "http://127.0.0.1:8080"
           username: "${QBITTORRENT_USER}"
           password: "${QBITTORRENT_PASS}"
     volumes:
       - decluttarr_data:/config
     read_only: true
     tmpfs:
+      - /app/logs
       - /tmp
       - /run
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os; os.kill(1, 0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   radarr:
     image: lscr.io/linuxserver/radarr@sha256:b01097ad2d948c9f5eca39eb60bb529e2e55b0738c4bf7db09383bef0abab59d
@@ -145,6 +173,12 @@ services:
     depends_on:
       vpn:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:7878/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   sonarr:
     image: lscr.io/linuxserver/sonarr@sha256:e6c9a091735fede0c2a205c69e7d4c2f0188eaf2bec7e42d8a26c017e5f2a910
@@ -165,6 +199,12 @@ services:
     depends_on:
       vpn:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:8989/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   bazarr:
     image: lscr.io/linuxserver/bazarr@sha256:7563f01bf27554df58e10544a4bb83479258883315a31cd1c929293e908144d0
@@ -185,6 +225,12 @@ services:
     depends_on:
       vpn:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:6767"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent@sha256:8f7a1da9644340c737e3211ecc910a416d4295076e6b2824a4afcd1f4e3576e2
@@ -230,6 +276,12 @@ services:
       METRICS_FILE: /textfile/qbittorrent.prom
       POLL_INTERVAL: 30
     command: ["python", "/app/qbittorrent-metrics.py"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os, sys; sys.exit(0 if os.path.exists('/textfile/qbittorrent.prom') else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
 networks:
   media_proxy:
