@@ -9,7 +9,7 @@ x-logging: &default-logging
 services:
   nginx:
     container_name: nginx
-    image: 'jc21/nginx-proxy-manager:latest'
+    image: 'jc21/nginx-proxy-manager@sha256:2aa69b382a384b676c0d4f1d6f2eac40ecd478fcf7af1cfb3f9f1d3cd0c81e12'
     restart: always
     logging: *default-logging
     ports:
@@ -35,11 +35,20 @@ services:
 
   derbynet:
     container_name: derbynet
-    image: jeffpiazza/derbynet_server:amd64
+    image: jeffpiazza/derbynet_server@sha256:cf57ec34d5207f842ad961edfb9929b145dac6f4f2691a8396859e68d4e84ccd
+    user: "1000:1000"
+    group_add:
+      - "101"
+      - "0"
     ports:
       - 8050:80
     volumes:
       - ./data/derbynet:/var/lib/derbynet
+      - ./data/derbynet/nginx:/var/lib/nginx
+      - ./data/derbynet/nginx-log:/var/log/nginx
+      - ./data/derbynet/php84:/var/log/php84
+      - ./data/derbynet/run-nginx:/run/nginx
+      - ./data/derbynet/run:/var/run/php
       - /etc/localtime:/etc/localtime:ro
       # edit passwords on host system
       # `sudo vim /var/lib/docker/volumes/faraday_derbyet_data/_data/config-roles.inc`
@@ -47,7 +56,7 @@ services:
     logging: *default-logging
 
   vpn:
-    image: qmcgaw/gluetun:latest
+    image: qmcgaw/gluetun@sha256:725d3e51091dde4ca43e3e3f26e2e6d3d0ccc66821e92d505c3da04958f7d472
     container_name: vpn
     cap_add:
       - NET_ADMIN
@@ -97,7 +106,7 @@ services:
 
   ######### *ARR SERVERS#########################################################
   prowlarr:
-    image: lscr.io/linuxserver/prowlarr:latest
+    image: lscr.io/linuxserver/prowlarr@sha256:c5de2a8758a05594319263e7691c1dce56899442ed1720d6eca216c0958f4caf
     container_name: prowlarr
     environment:
       - PUID=1000
@@ -113,13 +122,17 @@ services:
         condition: service_healthy
 
   flaresolverr:
-    image: ghcr.io/flaresolverr/flaresolverr:latest
+    image: ghcr.io/flaresolverr/flaresolverr@sha256:7962759d99d7e125e108e0f5e7f3cdbcd36161776d058d1d9b7153b92ef1af9e
     container_name: flaresolverr
     environment:
       - LOG_LEVEL=info
       - LOG_HTML=false
       - CAPTCHA_SOLVER=none
       - TZ=${TZ:-America/Chicago}
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /run
     restart: always
     logging: *default-logging
     network_mode: "service:vpn"
@@ -128,7 +141,7 @@ services:
         condition: service_healthy
 
   decluttarr:
-    image: ghcr.io/manimatter/decluttarr:latest
+    image: ghcr.io/manimatter/decluttarr@sha256:1e93192e9477cb01591de2ddac12d503662e2659792448e811b74bdb58e07ae4
     container_name: decluttarr
     restart: always
     logging: *default-logging
@@ -171,9 +184,13 @@ services:
           password: "${QBITTORRENT_PASS}"
     volumes:
       - decluttarr_data:/config
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /run
 
   radarr:
-    image: lscr.io/linuxserver/radarr:latest
+    image: lscr.io/linuxserver/radarr@sha256:b01097ad2d948c9f5eca39eb60bb529e2e55b0738c4bf7db09383bef0abab59d
     container_name: radarr
     environment:
       - PUID=1000
@@ -193,7 +210,7 @@ services:
         condition: service_healthy
 
   sonarr:
-    image: lscr.io/linuxserver/sonarr:latest
+    image: lscr.io/linuxserver/sonarr@sha256:e6c9a091735fede0c2a205c69e7d4c2f0188eaf2bec7e42d8a26c017e5f2a910
     container_name: sonarr
     environment:
       - PUID=1000
@@ -213,7 +230,7 @@ services:
         condition: service_healthy
 
   bazarr:
-    image: lscr.io/linuxserver/bazarr:latest
+    image: lscr.io/linuxserver/bazarr@sha256:7563f01bf27554df58e10544a4bb83479258883315a31cd1c929293e908144d0
     container_name: bazarr
     environment:
       - PUID=1000
@@ -236,7 +253,7 @@ services:
         condition: service_healthy
 
   qbittorrent:
-    image: lscr.io/linuxserver/qbittorrent:latest
+    image: lscr.io/linuxserver/qbittorrent@sha256:8f7a1da9644340c737e3211ecc910a416d4295076e6b2824a4afcd1f4e3576e2
     container_name: qbittorrent
     environment:
       - PUID=1000
@@ -260,11 +277,13 @@ services:
       start_period: 30s
 
   audiobookshelf:
-    image: ghcr.io/advplyr/audiobookshelf:latest
+    image: ghcr.io/advplyr/audiobookshelf@sha256:a44ed89b3e845faa1f7d353f2cc89b2fcd8011737dd14075fa963cf9468da3a5
+    user: "1000:1000"
     ports:
       - 13378:80
     volumes:
       - audiobookshelf_data:/config
+      - audiobookshelf_metadata:/metadata
       - ${audiobooks}:/audiobooks
       - ${podcasts}:/podcasts
     environment:
@@ -276,6 +295,11 @@ services:
   immich-server:
     container_name: immich_server
     image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-release}
+    user: "1000:1000"
+    environment: &immich_redis_env
+      REDIS_HOSTNAME: immich_redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
     # extends:
     #   file: config/hwaccel.transcoding.yml
     #   service: nvenc # set to one of [nvenc, quicksync, rkmpp, vaapi, vaapi-wsl] for accelerated transcoding
@@ -306,6 +330,7 @@ services:
     # For hardware acceleration, add one of -[armnn, cuda, openvino] to the image tag.
     # Example tag: ${IMMICH_VERSION:-release}-cuda
     image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION:-release}
+    user: "1000:1000"
     # extends:
     # Uncomment this section for hardware acceleration - see:
     # https://immich.app/docs/features/ml-hardware-acceleration
@@ -316,6 +341,11 @@ services:
       - model-cache:/cache
     env_file:
       - .env
+    environment: *immich_redis_env
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /run
     restart: always
     logging: *default-logging
     healthcheck:
@@ -325,9 +355,16 @@ services:
     container_name: immich_redis
     image: docker.io/redis:6.2-alpine@sha256:2d1463258f2764328496376f5d965f20c6a67f66ea2b06dc42af351f75248792
     healthcheck:
-      test: redis-cli ping || exit 1
+      test: ["CMD-SHELL", "redis-cli -a \"$REDIS_PASSWORD\" --no-auth-warning ping | grep -q PONG"]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
     volumes:
       - immich_redis_data:/data
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /run
     restart: always
     logging: *default-logging
 
@@ -355,7 +392,8 @@ services:
 
   actual_server:
     container_name: actual_server
-    image: docker.io/actualbudget/actual-server:latest
+    image: docker.io/actualbudget/actual-server@sha256:b0e732e2c41b3dc468a71548e88ef76d3f0c157fc43d15fa05d14ec1c5747e1e
+    user: "1000:1000"
     ports:
       - '5006:5006'
     volumes:
@@ -364,8 +402,9 @@ services:
     logging: *default-logging
 
   pinchflat:
-    image: ghcr.io/kieraneglin/pinchflat:latest
+    image: ghcr.io/kieraneglin/pinchflat@sha256:01b4f98aabaf3f5fe394213f7a32578c9e84e42080f52e2f8334021a4473b202
     container_name: pinchflat
+    user: "1000:1000"
     environment:
       - TZ=${TZ:-America/Chicago}
     ports:
@@ -377,7 +416,7 @@ services:
     logging: *default-logging
 
   jellyfin:
-    image: jellyfin/jellyfin:latest
+    image: jellyfin/jellyfin@sha256:1694ff069f0c9dafb283c36765175606866769f5d72f2ed56b6a0f1be922fc37
     user: "1000:1000"
     container_name: jellyfin
     environment:
@@ -413,7 +452,7 @@ services:
       start_period: 60s
 
   plex:
-    image: lscr.io/linuxserver/plex:latest
+    image: lscr.io/linuxserver/plex@sha256:e5c7c283b242966416a4bed2d666acf6f3fb8f957c704be8333f8dc987364825
     container_name: plex
     environment:
       - PUID=1000
@@ -441,8 +480,9 @@ services:
     logging: *default-logging
 
   minecraft-survival:
-    image: itzg/minecraft-bedrock-server:latest
+    image: itzg/minecraft-bedrock-server@sha256:406b421c5394d7fc957a2b51ca30ebd38dfe06bdee70b817ed86ac16c7bccc6b
     container_name: minecraft-survival
+    user: "1000:1000"
     environment:
       EULA: "TRUE"
       GAMEMODE: survival
@@ -464,8 +504,9 @@ services:
 
   # Creative Mode Server
   minecraft-creative:
-    image: itzg/minecraft-bedrock-server:latest
+    image: itzg/minecraft-bedrock-server@sha256:406b421c5394d7fc957a2b51ca30ebd38dfe06bdee70b817ed86ac16c7bccc6b
     container_name: minecraft-creative
+    user: "1000:1000"
     environment:
       EULA: "TRUE"
       GAMEMODE: creative
@@ -486,26 +527,45 @@ services:
     tty: true
 
   homeassistant:
-    image: ghcr.io/home-assistant/home-assistant:stable
+    image: ghcr.io/home-assistant/home-assistant@sha256:ae0800c81fea16bc1241ce03bddb9c6260566e90f58b09d3e5a629e4f68bdc0b
     container_name: homeassistant
     environment:
       - TZ=${TZ:-America/Chicago}
+    # network_mode: host is intentionally required here and must NOT be changed.
+    # HomeKit Bridge uses mDNS (UDP multicast on 224.0.0.251:5353) for both
+    # initial pairing and ongoing keep-alive with the Apple home hub. Docker bridge
+    # networks do not pass multicast — the avahi reflector alternative is
+    # documented by HA but adds instability for lock/light control. See:
+    # https://www.home-assistant.io/integrations/homekit/#docker-network-isolation
     network_mode: host
-    # ports:
-    #   - 8123:8123
     volumes:
       - homeassistant_data:/config
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 2g
+    mem_reservation: 256m
+    cpus: "2.0"
     restart: always
     logging: *default-logging
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8123"]
+      interval: 60s
+      timeout: 15s
+      retries: 5
+      start_period: 120s
 
   watchtower:
-    image: containrrr/watchtower:1.7.1
+    image: containrrr/watchtower@sha256:6dd50763bbd632a83cb154d5451700530d1e44200b268a4e9488fefdfcf2b038
     container_name: watchtower
+    user: "1000:1000"
+    group_add:
+      - "${DOCKER_GID}"
     restart: always
     logging: *default-logging
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
+      - WATCHTOWER_NOTIFICATIONS=email
       - WATCHTOWER_NOTIFICATION_EMAIL_FROM=${email}
       - WATCHTOWER_NOTIFICATION_EMAIL_TO=${email}
       - WATCHTOWER_NOTIFICATION_EMAIL_SERVER=smtp.gmail.com
@@ -514,7 +574,117 @@ services:
       - WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PASSWORD=${gmail_app_passwd}
       - WATCHTOWER_NOTIFICATION_EMAIL_DELAY=2
       - DOCKER_API_VERSION=1.52
-    command: --cleanup --interval 21600
+    command: --cleanup --interval 21600 --monitor-only
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: prometheus
+    restart: always
+    logging: *default-logging
+    volumes:
+      - prometheus_data:/prometheus
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: node-exporter
+    restart: always
+    logging: *default-logging
+    read_only: true
+    tmpfs:
+      - /tmp
+    command:
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --path.rootfs=/host
+      - --collector.textfile.directory=/textfile
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/host:ro,rslave
+      - node_exporter_textfile:/textfile:ro
+
+  qbittorrent-metrics:
+    image: python:3.12-alpine
+    container_name: qbittorrent_metrics
+    restart: always
+    logging: *default-logging
+    network_mode: "service:vpn"
+    depends_on:
+      vpn:
+        condition: service_healthy
+    volumes:
+      - node_exporter_textfile:/textfile
+      - ./scripts/linux/qbittorrent-metrics.py:/app/qbittorrent-metrics.py:ro
+    environment:
+      QB_WEBUI_URL: http://127.0.0.1:8080
+      QB_WEBUI_USER: ${QBITTORRENT_USER}
+      QB_WEBUI_PASSWORD: ${QBITTORRENT_PASS}
+      GLUETUN_HEALTH_URL: http://127.0.0.1:9999
+      METRICS_FILE: /textfile/qbittorrent.prom
+      POLL_INTERVAL: 30
+    command: ["python", "/app/qbittorrent-metrics.py"]
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: cadvisor
+    privileged: true
+    restart: always
+    logging: *default-logging
+    read_only: true
+    tmpfs:
+      - /tmp
+    volumes:
+      - /:/rootfs:ro,rslave
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+
+  grafana:
+    image: grafana/grafana:11.3.1
+    container_name: grafana
+    restart: always
+    logging: *default-logging
+    ports:
+      - 3000:3000
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_PATHS_PROVISIONING: /etc/grafana/provisioning
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./config/grafana-datasource.yml:/etc/grafana/provisioning/datasources/prometheus.yml:ro
+      - ./config/grafana-dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
+      - ./config/grafana-media-stack-overview.json:/var/lib/grafana/dashboards/media-stack-overview.json:ro
+      - ./config/grafana-qbittorrent-vpn.json:/var/lib/grafana/dashboards/qbittorrent-vpn.json:ro
+    depends_on:
+      - prometheus
+
+  tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.tests
+    depends_on:
+      nginx:
+        condition: service_healthy
+    environment:
+      - NPM_DB_PATH=/npm-data/database.sqlite
+      - TEST_LOG_PATH=/workspace/test.log
+      - TEST_TIMEOUT_SECONDS=${TEST_TIMEOUT_SECONDS:-10}
+      - TEST_DOMAIN=${TEST_DOMAIN:-}
+    user: "1000:1000"
+    volumes:
+      - .:/workspace
+      - nginx_data:/npm-data:ro
+    working_dir: /workspace
+    restart: "no"
+    logging: *default-logging
 
 volumes:
   nginx_data:
@@ -524,6 +694,7 @@ volumes:
   sonarr_data:
   qbittorrent_data:
   audiobookshelf_data:
+  audiobookshelf_metadata:
   model-cache:
   bazarr_data:
   gluetun_data:
@@ -535,3 +706,6 @@ volumes:
   jellyfin_cache:
   plex_data:
   homeassistant_data:
+  prometheus_data:
+  grafana_data:
+  node_exporter_textfile:
