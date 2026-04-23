@@ -64,12 +64,10 @@ else
     exit 1
 fi
 
-if [[ "${MEDIA_STACK_MODE:-legacy}" == "modular" ]]; then
-    while IFS= read -r stack; do
-        [[ -n "$stack" ]] || continue
-        load_env_file "${PROJECT_DIR}/${stack}/.env" || true
-    done < <(active_stack_names)
-fi
+while IFS= read -r stack; do
+    [[ -n "$stack" ]] || continue
+    load_env_file "${PROJECT_DIR}/${stack}/.env" || true
+done < <(active_stack_names)
 
 # --- Helper functions --------------------------------------------------------
 log() {
@@ -175,11 +173,6 @@ log "--- Phase 1: Named Docker volumes ---"
 PHASE1_START=$SECONDS
 
 cd "$COMPOSE_DIR"
-# Always prefer this stack's project name from .env to avoid matching
-# unrelated compose projects that may also be running on the same host.
-PROJECT_NAME="${COMPOSE_PROJECT_NAME:-media-stack}"
-log "Compose mode: ${MEDIA_STACK_MODE:-legacy}"
-
 VOL_KEYS=$(compose_volume_keys)
 if [[ -z "$VOL_KEYS" ]]; then
     log "WARNING: No compose volumes found. Skipping volume backup."

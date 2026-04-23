@@ -1,15 +1,13 @@
 #!/bin/bash
 
-# Configuration
-COMPOSE_FILE="../docker-compose.yaml"
-BKUP_BASE_DIR="../vol_bkup"
+set -euo pipefail
 
-# 1. Detect project name
-PROJECT_NAME=$(docker compose ls --format json | grep -oP '"Name":"\K[^"]+' | head -1)
-if [ -z "$PROJECT_NAME" ]; then
-    echo "Error: Could not detect project name. Are you in the project directory?"
-    exit 1
-fi
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+BKUP_BASE_DIR="${PROJECT_ROOT}/vol_bkup"
+
+# shellcheck source=media-stack-compose.sh
+source "${SCRIPT_DIR}/media-stack-compose.sh"
 
 # 2. Create base backup directory
 mkdir -p "$BKUP_BASE_DIR"
@@ -28,32 +26,33 @@ while true; do
 done
 
 mkdir -p "$BKUP_DIR"
-echo "Starting backup to $BKUP_DIR for project $PROJECT_NAME..."
+echo "Starting backup to $BKUP_DIR..."
 
-# 4. Get volumes listed in the compose file
-# This returns the keys from the 'volumes:' section
+# 4. Get volumes listed across the modular compose files.
 VOL_KEYS=$(docker compose config --volumes)
+if [[ -z "$VOL_KEYS" ]]; then
+    VOL_KEYS=$(compose_volume_keys)
+fi
 
 if [ -z "$VOL_KEYS" ]; then
-    echo "No volumes found in $COMPOSE_FILE to back up."
+    echo "No volumes found to back up."
     exit 0
 fi
 
 # 5. Initialize report
 REPORT_FILE="${BKUP_DIR}/backup_report.txt"
 echo "Backup Report - $(date)" > "$REPORT_FILE"
-echo "Project: $PROJECT_NAME" >> "$REPORT_FILE"
 echo "------------------------------------------------" >> "$REPORT_FILE"
 printf "%-30s | %s\n" "Volume Key" "Size" >> "$REPORT_FILE"
 printf "%-30s | %s\n" "------------------------------" "----------" >> "$REPORT_FILE"
 
 for VOL_KEY in $VOL_KEYS; do
-    # Find the actual volume name using project label and volume label
-    VOL_NAME=$(docker volume ls -q --filter "label=com.docker.compose.project=${PROJECT_NAME}" --filter "label=com.docker.compose.volume=${VOL_KEY}")
-    
+    # Find the actual volume name using compose labels across the modular stacks.
+    VOL_NAME=$(compose_volume_name "$VOL_KEY")
+
     if [ -z "$VOL_NAME" ]; then
         # Fallback: try prepending project name if label search fails
-        VOL_NAME="${PROJECT_NAME}_${VOL_KEY}"
+        VOL_NAME="${VOL_KEY}"
         if ! docker volume inspect "$VOL_NAME" > /dev/null 2>&1; then
             echo "Warning: Could not find volume for key $VOL_KEY"
             continue
@@ -82,4 +81,3 @@ done
 echo "------------------------------------------------"
 echo "Backup complete. Files saved to $BKUP_DIR"
 echo "Report generated: $REPORT_FILE"
-

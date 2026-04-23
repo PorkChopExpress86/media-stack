@@ -59,11 +59,7 @@ http_status_from_service() {
   local service="$1"
   local url="$2"
 
-  if [[ "${MEDIA_STACK_MODE:-legacy}" == "modular" ]]; then
-    compose_cmd_for_stack arr-stack exec -T "$service" sh -c "curl -sS -I --max-time 15 '$url' | sed -n '1p'" 2>/dev/null | awk '{print $2}'
-  else
-    compose_cmd_for_stack "$LEGACY_PROJECT_NAME" exec -T "$service" sh -c "curl -sS -I --max-time 15 '$url' | sed -n '1p'" 2>/dev/null | awk '{print $2}'
-  fi
+  compose_cmd_for_stack arr-stack exec -T "$service" sh -c "curl -sS -I --max-time 15 '$url' | sed -n '1p'" 2>/dev/null | awk '{print $2}'
 }
 
 check_http_status() {

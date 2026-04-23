@@ -10,7 +10,7 @@
 # - Database dump file (.sql or .sql.gz)
 # - Upload files backup (if available)
 # - Docker and docker compose installed
-# - Immich containers defined in docker-compose.yaml
+# - Immich containers defined in immich/compose.yml
 #
 # USAGE:
 #   ./restore-immich-linux.sh [database_dump_file]
