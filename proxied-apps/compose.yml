@@ -29,6 +29,12 @@ services:
       media_proxy:
         aliases:
           - derbynet
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   audiobookshelf:
     image: ghcr.io/advplyr/audiobookshelf@sha256:a44ed89b3e845faa1f7d353f2cc89b2fcd8011737dd14075fa963cf9468da3a5
@@ -48,6 +54,12 @@ services:
       media_proxy:
         aliases:
           - audiobookshelf
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   minecraft-survival:
     image: itzg/minecraft-bedrock-server@sha256:406b421c5394d7fc957a2b51ca30ebd38dfe06bdee70b817ed86ac16c7bccc6b
