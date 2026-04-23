@@ -269,11 +269,11 @@ powershell.exe -ExecutionPolicy Bypass -File "C:\Users\Blake\Docker\MediaServer\
 2. **Multiple backup locations** - Keep copies on different drives/locations
 3. **Monitor backup size** - Growing backups may indicate issues
 4. **Keep old backups** - Don't immediately delete after new backup
-5. **Document your setup** - Save `.env` and `docker-compose.yml` configs
+5. **Document your setup** - Save `.env` and `compose.yml` configs
 
 ---
 
-**Current Setup (from your docker-compose.yaml):**
+**Current Setup (from the modular Immich stack):**
 - Upload Location: `S:\Immich\upload`
 - Database Container: `immich_postgres`
 - Backup Destination: `G:\Immich_Backups`

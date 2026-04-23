@@ -26,7 +26,7 @@ The test service:
 ## Files involved
 
 - `Dockerfile.tests` — builds the lightweight test image
-- `docker-compose.yaml` — defines the `tests` service
+- `nginx-proxy/compose.yml` — defines the `tests` service
 - `nginx-proxy/config/nginx-proxy-regression-baseline.json` — checked-in baseline of acceptable redirect targets
 - `scripts/linux/test-domains.sh` — main test runner
 - `scripts/linux/run-tests-scheduled.sh` — wrapper for scheduled runs
@@ -37,19 +37,19 @@ The test service:
 ### Build the test image
 
 ```bash
-docker compose build tests
+docker compose --project-directory "$PWD" --env-file nginx-proxy/.env -p nginx-proxy -f nginx-proxy/compose.yml build tests
 ```
 
 ### Run all enabled proxy checks
 
 ```bash
-docker compose run --rm -T tests
+docker compose --project-directory "$PWD" --env-file nginx-proxy/.env -p nginx-proxy -f nginx-proxy/compose.yml run --rm -T tests
 ```
 
 ### Run a single domain
 
 ```bash
-docker compose run --rm -T -e TEST_DOMAIN=immich.ohmygoshwhatever.com tests
+docker compose --project-directory "$PWD" --env-file nginx-proxy/.env -p nginx-proxy -f nginx-proxy/compose.yml run --rm -T -e TEST_DOMAIN=immich.ohmygoshwhatever.com tests
 ```
 
 ### Run the scheduled wrapper manually

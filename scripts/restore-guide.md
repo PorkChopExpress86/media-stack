@@ -248,14 +248,14 @@ Configure in: Administration → Settings → Backup Settings
 
 - **Immich Documentation**: https://docs.immich.app/administration/backup-and-restore
 - **Your Backup Guide**: [immich-backup-guide.md](./immich-backup-guide.md)
-- **Docker Compose File**: [../docker-compose.yaml](../docker-compose.yaml)
+- **Docker Compose File**: [../immich/compose.yml](../immich/compose.yml)
 - **Environment Config**: [../.env](../.env)
 
 ## Quick Reference Commands
 
 ```bash
-# Navigate to project directory
-cd /home/specter/Docker/MediaServer
+# Navigate to the Immich stack directory
+cd /home/specter/Docker/MediaServer/immich
 
 # Run restore (database only)
 ./scripts/linux/restore-immich-linux.sh immich-db-backup-20260124T020000-v2.4.1-pg14.19.sql

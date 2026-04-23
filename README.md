@@ -54,10 +54,8 @@ A comprehensive Docker Compose setup for a home media server with automated back
 ```bash
 git clone https://github.com/PorkChopExpress86/media-stack.git
 cd media-stack
-cp .env.example .env
-# Edit .env with your paths and credentials
-nano .env
-docker compose up -d
+# Copy the stack .env.example files you need, then edit them in place.
+bash scripts/linux/update-compose.sh
 ```
 
 **Access:** Nginx Proxy Manager (`http://localhost:81`, default: `admin@example.com`/`changeme`), Jellyfin (8096), Immich (2283), *arr services via VPN ports
@@ -78,7 +76,7 @@ Edit `.env` with your paths and credentials:
 | **Notifications** | `email`, `gmail_app_passwd` |
 | **Other** | `jellyfin_url`, `plex_claim`, `TZ` |
 
-The legacy monolithic stack still uses root `.env` and `.env.example`. Modular stacks use stack-local env files:
+Modular stacks use stack-local env files:
 
 - `nginx-proxy/.env.example`
 - `jellyfin/.env.example`
@@ -92,7 +90,7 @@ For each modular stack, copy its `.env.example` to `.env` in the same folder and
 
 ### Naming Standard
 
-Use these naming rules for consistency across `.env`, `docker-compose.yaml`, scripts, and backup artifacts:
+Use these naming rules for consistency across `.env`, compose files, scripts, and backup artifacts:
 
 - **Stack-defined `.env` variables:** use `lower_snake_case`.
 	- Examples: `qbittorrent_downloads`, `kids_tv_shows`, `vpn_username`, `jellyfin_url`
@@ -170,7 +168,6 @@ Troubleshooting:
 
 This repository is organized by function so day-to-day operations are easier to navigate:
 
-- `docker-compose.yaml` — legacy monolithic stack definition and rollback source during migration.
 - `nginx-proxy/compose.yml` — Nginx Proxy Manager and proxy regression test container.
 - `jellyfin/compose.yml` — Jellyfin as its own proxied media stack.
 - `arr-stack/compose.yml` — Gluetun, qBittorrent, *arr apps, FlareSolverr, Decluttarr, qBittorrent metrics.
@@ -179,7 +176,7 @@ This repository is organized by function so day-to-day operations are easier to 
 - `lan-apps/compose.yml` — direct/LAN apps: Actual Budget, Pinchflat, Plex, Home Assistant.
 - `proxied-apps/compose.yml` — other standalone apps reached by NPM: Audiobookshelf, DerbyNet, Minecraft.
 - `monitoring/compose.yml` — Prometheus, Grafana, cAdvisor, node-exporter, Watchtower.
-- `.env` / `.env.example` — runtime secrets and environment configuration template.
+- `.env` / `.env.example` — local host secrets and shared environment settings.
 - `scripts/linux/` — operational Linux scripts (backup, restore, update, maintenance).
 - `scripts/windows/` — PowerShell equivalents for Windows-based operations.
 - `scripts/` — shared helper scripts and operational guides.
@@ -242,36 +239,24 @@ docker compose logs -f [service]
 docker compose restart [service]
 ```
 
-### Modular Compose migration
+### Modular Compose
 
-The legacy `docker-compose.yaml` remains the default. The modular files are staged so services can be moved one stack at a time while reusing the existing `media-stack_*` Docker volumes and the same bind mounts.
+Each stack owns its own `compose.yml` and ignored `.env` file. The helper scripts operate on those modular stack files directly.
 
-Each modular stack reads its own ignored `.env` file from the stack folder. The helper scripts prefer stack-local `.env` files in modular mode and fall back to root `.env` where needed for compatibility.
-
-Before starting any modular stack that needs reverse proxy access, create the shared external network once:
+To update or start everything in one pass, use:
 
 ```bash
-docker network create media_proxy
+bash scripts/linux/update-compose.sh
 ```
 
-Bring up an individual modular stack with an explicit project name:
+To operate on one stack directly, run Compose from that stack directory:
 
 ```bash
-docker compose --project-directory "$PWD" --env-file nginx-proxy/.env -p nginx-proxy -f nginx-proxy/compose.yml up -d
-docker compose --project-directory "$PWD" --env-file jellyfin/.env -p jellyfin -f jellyfin/compose.yml up -d
-docker compose --project-directory "$PWD" --env-file arr-stack/.env -p arr-stack -f arr-stack/compose.yml up -d
-docker compose --project-directory "$PWD" --env-file immich/.env -p immich -f immich/compose.yml up -d
+cd nginx-proxy
+docker compose up -d
 ```
 
-Operational scripts use the monolithic stack unless `MEDIA_STACK_MODE=modular` is set. Limit modular script runs to specific stacks with `MEDIA_STACK_STACKS` when migrating in phases:
-
-```bash
-MEDIA_STACK_MODE=modular MEDIA_STACK_STACKS=nginx-proxy,arr-stack bash scripts/linux/run-regression-tests.sh
-MEDIA_STACK_MODE=modular bash scripts/linux/backup-all.sh
-MEDIA_STACK_MODE=modular MEDIA_STACK_STACKS=lan-apps bash scripts/linux/update-compose.sh
-```
-
-Do not use `docker compose down -v` during migration. Do not use `--remove-orphans` until legacy containers and any orphaned services have been reviewed explicitly.
+Stacks that need reverse proxy access share the `media_proxy` network.
 
 ### Regression test suite
 
