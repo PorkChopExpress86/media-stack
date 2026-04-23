@@ -59,10 +59,8 @@ _Audited: 2026-04-22 | Re-reviewed: 2026-04-23 against modular compose stacks_
   - `homeassistant` now has Compose-enforced CPU and memory caps using service-level `cpus`, `mem_limit`, and `mem_reservation`.
   - Remaining services can be tightened further if desired, but the previously identified Home Assistant exception is now addressed.
 
-- [ ] **`watchtower` — docker.sock access is a container escape vector**
-  - Even though `watchtower` is hardened (`user: "1000:1000"`, `group_add: DOCKER_GID`, `--monitor-only`), docker.sock access grants full container-lifecycle control if the process is compromised.
-  - `--monitor-only` flag is confirmed present in `monitoring/compose.yml:29`.
-  - Action: evaluate switching to Renovate + Dependabot for image updates so docker.sock access can be removed entirely.
+- [x] **`watchtower` — docker.sock access is a container escape vector**
+  - **Resolution**: Watchtower removed entirely (2026-04-23). Was running `--monitor-only`; Dependabot now handles update detection via weekly PRs (Friday 18:00 CT). No service in the stack mounts docker.sock.
 
 ---
 
@@ -127,7 +125,6 @@ _Audited: 2026-04-22 | Re-reviewed: 2026-04-23 against modular compose stacks_
 
 - [x] **`proxied-apps/data/` secret files gitignored** — `proxied-apps/data/**/*` is excluded; only `.gitkeep` is tracked. DerbyNet credential files are not committed.
 
-- `watchtower` — non-root (`user: "1000:1000"`, `group_add: DOCKER_GID`), `--monitor-only`
 - `jellyfin` — non-root (`user: "1000:1000"`, `group_add` for render/video devices)
 - All image references pinned by SHA256 digest
 - Log rotation configured globally (`max-size: 10m`, `max-file: 3`)
