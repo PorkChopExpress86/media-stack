@@ -100,7 +100,7 @@ _Audited: 2026-04-22 | Re-reviewed: 2026-04-23 against modular compose stacks_
 
 - [ ] **Add `cap_drop: [ALL]` + minimal `cap_add` to non-root services**
   - Services running as UID 1000 still inherit default Linux capabilities (e.g., `NET_BIND_SERVICE`, `SETUID`).
-  - Fix: apply `cap_drop: [ALL]` to `watchtower`, `jellyfin`, `radarr`, `sonarr`, `bazarr`, `qbittorrent`, `prowlarr`.
+  - Fix: apply `cap_drop: [ALL]` to `jellyfin`, `radarr`, `sonarr`, `bazarr`, `qbittorrent`, `prowlarr`.
 
 - [ ] **Dependabot schedule is weekly — consider shortening for high-risk images**
   - `nginx`, `vpn` (gluetun), `immich-server`, and `redis` are internet-facing or security-critical.
@@ -132,4 +132,4 @@ _Audited: 2026-04-22 | Re-reviewed: 2026-04-23 against modular compose stacks_
 - Dependabot configured for weekly Docker digest updates
 - nginx admin port bound to `127.0.0.1:81` only
 - VPN namespace regression tests validate routing isolation for all *arr services
-- Socket-mount-validation skill + probe script for watchtower docker.sock regression
+- Socket-mount-validation skill + probe script retained for future use (no service currently mounts docker.sock)
