@@ -1,0 +1,28 @@
+{
+  "redirects": {
+    "sonarr.ohmygoshwhatever.com": {
+      "status": 302,
+      "location": "https://sonarr.ohmygoshwhatever.com/login?returnUrl=%2F"
+    },
+    "radarr.ohmygoshwhatever.com": {
+      "status": 302,
+      "location": "https://radarr.ohmygoshwhatever.com/login?returnUrl=%2F"
+    },
+    "prowlarr.ohmygoshwhatever.com": {
+      "status": 302,
+      "location": "https://prowlarr.ohmygoshwhatever.com/login?returnUrl=%2F"
+    },
+    "derbynet.ohmygoshwhatever.com": {
+      "status": 302,
+      "location": "setup.php"
+    },
+    "jellyfin.ohmygoshwhatever.com": {
+      "status": 302,
+      "location": "web/"
+    },
+    "almeda.ohmygoshwhatever.com": {
+      "status": 302,
+      "location": "/accounts/login/?next=/"
+    }
+  }
+}
