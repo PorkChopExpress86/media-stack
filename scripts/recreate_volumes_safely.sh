@@ -39,7 +39,6 @@ VOLUMES=(
     "media-stack_grafana_data"
     "media-stack_homeassistant_data"
     "media-stack_model-cache"
-    "media-stack_watchtower_data"
     "media-stack_vpn_data"       # In case it exists
 )
 

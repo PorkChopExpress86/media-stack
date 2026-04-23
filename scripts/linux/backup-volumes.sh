@@ -71,9 +71,6 @@ backup_volume media-stack_immich_server_data /data           media-stack_immich_
 # Home Assistant
 backup_volume media-stack_homeassistant_data /config         media-stack_homeassistant_data.tar.gz
 
-# Watchtower
-backup_volume media-stack_watchtower_data   /data            media-stack_watchtower_data.tar.gz
-
 echo ""
 echo "Backup completed successfully!"
 echo "Location: ${BACKUP_DIR}"

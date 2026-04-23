@@ -162,8 +162,5 @@ restore_volume media-stack_immich_server_data /data           immich_server_data
 # Home Assistant
 restore_volume media-stack_homeassistant_data /config         homeassistant_data.tar.gz
 
-# Watchtower
-restore_volume media-stack_watchtower_data   /data            watchtower_data.tar.gz
-
 echo ""
 echo "Restore complete! You can start services with: docker compose up -d"
