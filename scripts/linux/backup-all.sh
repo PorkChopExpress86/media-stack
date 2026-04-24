@@ -4,9 +4,8 @@ set -euo pipefail
 # =============================================================================
 # backup-all.sh — Backs up Docker volumes, bind-mounted data, and Postgres DB
 #
-# Designed to run weekly via cron:
-#   0 3 * * 0 /mnt/samsung/Docker/MediaServer/scripts/linux/backup-all.sh \
-#     >> /mnt/samsung/Docker/MediaServer/vol_bkup/backup.log 2>&1
+# Designed to run weekly via systemd timer (Mondays at 02:00).
+# See scripts/linux/systemd/media-stack-backup.timer to install.
 #
 # Retains the most recent MAX_BACKUPS weekly backup sets and deletes older ones.
 # =============================================================================
