@@ -1,0 +1,12 @@
+[Unit]
+Description=Media Stack full backup (volumes, bind mounts, Postgres)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/mnt/samsung/Docker/MediaServer
+ExecStart=/usr/bin/bash /mnt/samsung/Docker/MediaServer/scripts/linux/backup-all.sh
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=media-stack-backup

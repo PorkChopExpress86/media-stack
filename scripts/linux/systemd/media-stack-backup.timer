@@ -1,0 +1,10 @@
+[Unit]
+Description=Media Stack backup — weekly timer
+
+[Timer]
+# Every Monday at 02:00 local time
+OnCalendar=Mon *-*-* 02:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
