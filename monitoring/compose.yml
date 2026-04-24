@@ -13,7 +13,7 @@ services:
     logging: *default-logging
     volumes:
       - prometheus_data:/prometheus
-      - ./monitoring/config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.path=/prometheus
@@ -86,10 +86,10 @@ services:
       GF_PATHS_PROVISIONING: /etc/grafana/provisioning
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./monitoring/config/grafana-datasource.yml:/etc/grafana/provisioning/datasources/prometheus.yml:ro
-      - ./monitoring/config/grafana-dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
-      - ./monitoring/config/grafana-media-stack-overview.json:/var/lib/grafana/dashboards/media-stack-overview.json:ro
-      - ./monitoring/config/grafana-qbittorrent-vpn.json:/var/lib/grafana/dashboards/qbittorrent-vpn.json:ro
+      - ./config/grafana-datasource.yml:/etc/grafana/provisioning/datasources/prometheus.yml:ro
+      - ./config/grafana-dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
+      - ./config/grafana-media-stack-overview.json:/var/lib/grafana/dashboards/media-stack-overview.json:ro
+      - ./config/grafana-qbittorrent-vpn.json:/var/lib/grafana/dashboards/qbittorrent-vpn.json:ro
     depends_on:
       - prometheus
     networks:
