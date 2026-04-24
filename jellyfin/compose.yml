@@ -8,7 +8,7 @@ x-logging: &default-logging
 services:
   jellyfin:
     image: jellyfin/jellyfin@sha256:1694ff069f0c9dafb283c36765175606866769f5d72f2ed56b6a0f1be922fc37
-    user: "1000:1000"
+    user: "1000:1001"
     container_name: jellyfin
     environment:
       - TZ=${TZ:-America/Chicago}
@@ -30,7 +30,7 @@ services:
     devices:
       - /dev/dri:/dev/dri
     ports:
-      - 8096:8096/tcp
+      - 127.0.0.1:8096:8096/tcp
       - 7359:7359/udp
     restart: 'unless-stopped'
     logging: *default-logging

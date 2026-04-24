@@ -20,15 +20,15 @@ services:
     devices:
       - /dev/net/tun:/dev/net/tun
     ports:
-      - 8888:8888/tcp
-      - 8388:8388/tcp
-      - 8389:8388/udp
-      - 7878:7878
-      - 8989:8989
-      - 9696:9696
-      - 1080:1080/tcp
-      - 6767:6767
-      - 8080:8080
+      - 127.0.0.1:8888:8888/tcp
+      - 127.0.0.1:8388:8388/tcp
+      - 127.0.0.1:8389:8388/udp
+      - 127.0.0.1:7878:7878
+      - 127.0.0.1:8989:8989
+      - 127.0.0.1:9696:9696
+      - 127.0.0.1:1080:1080/tcp
+      - 127.0.0.1:6767:6767
+      - 127.0.0.1:8080:8080
     sysctls:
       - net.ipv6.conf.all.disable_ipv6=1
     volumes:
@@ -61,7 +61,7 @@ services:
     container_name: prowlarr
     environment:
       - PUID=1000
-      - PGID=1000
+      - PGID=1001
       - TZ=${TZ:-America/Chicago}
     volumes:
       - prowlarr_data:/config
@@ -121,7 +121,7 @@ services:
     environment:
       TZ: ${TZ:-America/Chicago}
       PUID: 1000
-      PGID: 1000
+      PGID: 1001
       LOG_LEVEL: INFO
       TEST_RUN: "false"
       TIMER: 60
@@ -164,7 +164,7 @@ services:
     environment:
       - TZ=${TZ:-America/Chicago}
       - PUID=1000
-      - PGID=1000
+      - PGID=1001
       - RADARR_API_KEY=${RADARR_API_KEY}
       - SONARR_API_KEY=${SONARR_API_KEY}
     volumes:
@@ -182,7 +182,7 @@ services:
     container_name: radarr
     environment:
       - PUID=1000
-      - PGID=1000
+      - PGID=1001
       - TZ=${TZ:-America/Chicago}
     volumes:
       - radarr_data:/config
@@ -208,7 +208,7 @@ services:
     container_name: sonarr
     environment:
       - PUID=1000
-      - PGID=1000
+      - PGID=1001
       - TZ=${TZ:-America/Chicago}
     volumes:
       - sonarr_data:/config
@@ -234,7 +234,7 @@ services:
     container_name: bazarr
     environment:
       - PUID=1000
-      - PGID=1000
+      - PGID=1001
       - TZ=${TZ:-America/Chicago}
     volumes:
       - bazarr_data:/config
@@ -260,7 +260,7 @@ services:
     container_name: qbittorrent
     environment:
       - PUID=1000
-      - PGID=1000
+      - PGID=1001
       - TZ=${TZ:-America/Chicago}
       - WEBUI_PORT=8080
     volumes:

@@ -14,7 +14,7 @@ services:
   immich-server:
     container_name: immich_server
     image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-release}
-    user: "1000:1000"
+    user: "1000:1001"
     environment: *immich_redis_env
     # extends:
     #   file: ./immich/config/hwaccel.transcoding.yml
@@ -26,7 +26,7 @@ services:
     env_file:
       - ./immich/.env
     ports:
-      - 2283:2283
+      - 127.0.0.1:2283:2283
     depends_on:
       redis:
         condition: service_healthy
@@ -45,7 +45,7 @@ services:
   immich-machine-learning:
     container_name: immich_machine_learning
     image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_ML_VERSION:-${IMMICH_VERSION:-release}}
-    user: "1000:1000"
+    user: "1000:1001"
     # For hardware acceleration, add one of -[armnn, cuda, openvino] to the image tag.
     # Example: set IMMICH_ML_VERSION=v2-cuda and enable service cuda below.
     # extends:

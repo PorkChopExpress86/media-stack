@@ -9,9 +9,9 @@ services:
   actual_server:
     container_name: actual_server
     image: docker.io/actualbudget/actual-server@sha256:b0e732e2c41b3dc468a71548e88ef76d3f0c157fc43d15fa05d14ec1c5747e1e
-    user: "1000:1000"
+    user: "1000:1001"
     ports:
-      - '5006:5006'
+      - '127.0.0.1:5006:5006'
     volumes:
       - ./lan-apps/data/budget:/data
     restart: always
@@ -32,11 +32,11 @@ services:
   pinchflat:
     image: ghcr.io/kieraneglin/pinchflat@sha256:01b4f98aabaf3f5fe394213f7a32578c9e84e42080f52e2f8334021a4473b202
     container_name: pinchflat
-    user: "1000:1000"
+    user: "1000:1001"
     environment:
       - TZ=${TZ:-America/Chicago}
     ports:
-      - '8945:8945'
+      - '127.0.0.1:8945:8945'
     volumes:
       - pinchflat_data:/config
       - "${pinchflat_downloads}:/downloads"
@@ -54,7 +54,7 @@ services:
     container_name: plex
     environment:
       - PUID=1000
-      - PGID=1000
+      - PGID=1001
       - TZ=${TZ:-America/Chicago}
       - VERSION=docker
       - PLEX_CLAIM=${plex_claim}
@@ -89,7 +89,7 @@ services:
       - LOG_LEVEL=info
       - TZ=${TZ:-America/Chicago}
     ports:
-      - 5055:5055
+      - 127.0.0.1:5055:5055
     volumes:
       - jellyseerr_data:/app/config
     restart: unless-stopped

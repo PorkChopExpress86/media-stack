@@ -9,12 +9,12 @@ services:
   derbynet:
     container_name: derbynet
     image: jeffpiazza/derbynet_server@sha256:cf57ec34d5207f842ad961edfb9929b145dac6f4f2691a8396859e68d4e84ccd
-    user: "1000:1000"
+    user: "1000:1001"
     group_add:
       - "101"
       - "0"
     ports:
-      - 8050:80
+      - 127.0.0.1:8050:80
     volumes:
       - ./proxied-apps/data/derbynet:/var/lib/derbynet
       - ./proxied-apps/data/derbynet/nginx:/var/lib/nginx
@@ -38,9 +38,9 @@ services:
 
   audiobookshelf:
     image: ghcr.io/advplyr/audiobookshelf@sha256:a44ed89b3e845faa1f7d353f2cc89b2fcd8011737dd14075fa963cf9468da3a5
-    user: "1000:1000"
+    user: "1000:1001"
     ports:
-      - 13378:80
+      - 127.0.0.1:13378:80
     volumes:
       - audiobookshelf_data:/config
       - audiobookshelf_metadata:/metadata
