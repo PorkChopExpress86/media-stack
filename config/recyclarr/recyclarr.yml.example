@@ -1,6 +1,15 @@
 # Example Recyclarr config.
 # Copy this into the recyclarr /config volume as recyclarr.yml and replace placeholders.
 # Expand this using the Recyclarr and TRaSH Guides documentation.
+#
+# Storage-conscious profile target for 1080p WEB content:
+# - Favor WEB-DL / WEBRip and HEVC (x265 / H.265)
+# - Do not prefer Remux or 2160p/UHD for this profile
+# - Target roughly <= 2.5 GB/hour (about 5.5 Mbps total bitrate)
+#
+# NOTE: This repository does not currently track real TRaSH custom format IDs in-source.
+# Use TODO_TRASH_* placeholders below as explicit TODO markers and replace with real IDs
+# from TRaSH Guides before enabling sync in production.
 
 radarr:
   movies:
@@ -8,8 +17,218 @@ radarr:
     api_key: !env_var RADARR_API_KEY
     delete_old_custom_formats: true
 
+    quality_profiles:
+      - name: 1080p Small WEB
+        min_format_score: 0
+        upgrade:
+          allowed: true
+          until_quality: WEBDL-1080p
+          until_score: 10000
+        qualities:
+          - name: WEBDL-1080p
+          - name: WEBRip-1080p
+          - name: Bluray-1080p
+            enabled: false # enable only if you still want occasional non-WEB fallback
+          - name: Remux-1080p
+            enabled: false
+          - name: Remux-2160p
+            enabled: false
+          - name: WEBDL-2160p
+            enabled: false
+          - name: WEBRip-2160p
+            enabled: false
+          - name: Bluray-2160p
+            enabled: false
+
+      - name: 1080p Standard
+        min_format_score: 0
+        upgrade:
+          allowed: true
+          until_quality: Remux-1080p
+          until_score: 10000
+        qualities:
+          - name: WEBDL-1080p
+          - name: WEBRip-1080p
+          - name: Bluray-1080p
+          - name: Remux-1080p
+          - name: Remux-2160p
+            enabled: false
+          - name: WEBDL-2160p
+            enabled: false
+          - name: WEBRip-2160p
+            enabled: false
+          - name: Bluray-2160p
+            enabled: false
+
+      - name: 4K Standard
+        min_format_score: 0
+        upgrade:
+          allowed: true
+          until_quality: Remux-2160p
+          until_score: 10000
+        qualities:
+          - name: WEBDL-2160p
+          - name: WEBRip-2160p
+          - name: Bluray-2160p
+          - name: Remux-2160p
+          - name: WEBDL-1080p
+            enabled: false
+          - name: WEBRip-1080p
+            enabled: false
+          - name: Bluray-1080p
+            enabled: false
+          - name: Remux-1080p
+            enabled: false
+
+    # Minimal low-risk CF pack for 1080p profiles:
+    # - Prefer x265 for smaller files
+    # - Penalize oversized lossless audio tracks
+    # - Hard-penalize 2160p for 1080p profiles as extra guardrail
+    # Keep HEVC preferred (not required) by leaving min_format_score at 0.
+    custom_formats:
+      - trash_ids:
+          - dc98083864ea246d05a42df0d05f81cc # x265 (HD)
+        assign_scores_to:
+          - name: 1080p Small WEB
+            score: 160
+          - name: 1080p Standard
+            score: 100
+      - trash_ids:
+          - dcf3ec6938fa32445f590a4da84256cd # DTS-HD MA
+          - 3cafb66171b47f226146a0770576870f # TrueHD
+          - 496f355514737f7d83bf7aa4d24f8169 # TrueHD ATMOS
+          - 417804f7f2c4308c1f4c5d380d4c4475 # ATMOS (undefined)
+        assign_scores_to:
+          - name: 1080p Small WEB
+            score: -175
+          - name: 1080p Standard
+            score: -75
+      - trash_ids:
+          - fb392fb0d61a010ae38e49ceaa24a1ef # 2160p
+        assign_scores_to:
+          - name: 1080p Small WEB
+            score: -10000
+          - name: 1080p Standard
+            score: -500
+      - trash_ids:
+          - 3a3ff47579026e76d6504ebea39390de # Remux Tier 01
+          - 9f98181fe5a3fbeb0cc29340da2a468a # Remux Tier 02
+          - 8baaf0b3142bf4d94c42a724f034e27a # Remux Tier 03
+        assign_scores_to:
+          - name: 1080p Small WEB
+            score: -400
+
+    # If you manage quality-definition limits via Recyclarr, tune 1080p around:
+    # min: 900-1200 MB/h, preferred: 1800-2200 MB/h, max: 2400-2500 MB/h.
+    # If not managed here, set equivalent limits in Radarr UI quality settings.
+
 sonarr:
   tv:
     base_url: http://vpn:8989
     api_key: !env_var SONARR_API_KEY
     delete_old_custom_formats: true
+
+    quality_profiles:
+      - name: 1080p Small WEB
+        min_format_score: 0
+        upgrade:
+          allowed: true
+          until_quality: WEBDL-1080p
+          until_score: 10000
+        qualities:
+          - name: WEBDL-1080p
+          - name: WEBRip-1080p
+          - name: Bluray-1080p
+            enabled: false # enable only if your current Sonarr profile already allows it
+          - name: Bluray-1080p Remux
+            enabled: false
+          - name: Bluray-2160p Remux
+            enabled: false
+          - name: WEBDL-2160p
+            enabled: false
+          - name: WEBRip-2160p
+            enabled: false
+          - name: Bluray-2160p
+            enabled: false
+
+      - name: 1080p Standard
+        min_format_score: 0
+        upgrade:
+          allowed: true
+          until_quality: Bluray-1080p Remux
+          until_score: 10000
+        qualities:
+          - name: WEBDL-1080p
+          - name: WEBRip-1080p
+          - name: Bluray-1080p
+          - name: Bluray-1080p Remux
+          - name: HDTV-1080p
+          - name: Bluray-2160p Remux
+            enabled: false
+          - name: WEBDL-2160p
+            enabled: false
+          - name: WEBRip-2160p
+            enabled: false
+          - name: Bluray-2160p
+            enabled: false
+
+      - name: 4K Standard
+        min_format_score: 0
+        upgrade:
+          allowed: true
+          until_quality: Bluray-2160p Remux
+          until_score: 10000
+        qualities:
+          - name: WEBDL-2160p
+          - name: WEBRip-2160p
+          - name: Bluray-2160p
+          - name: Bluray-2160p Remux
+          - name: HDTV-2160p
+          - name: WEBDL-1080p
+            enabled: false
+          - name: WEBRip-1080p
+            enabled: false
+          - name: Bluray-1080p
+            enabled: false
+          - name: Bluray-1080p Remux
+            enabled: false
+
+    # Minimal low-risk CF pack for 1080p profiles:
+    # - Prefer x265 for smaller files
+    # - Penalize oversized lossless audio tracks
+    # - Hard-penalize 2160p for 1080p profiles as extra guardrail
+    custom_formats:
+      - trash_ids:
+          - 47435ece6b99a0b477caf360e79ba0bb # x265 (HD)
+        assign_scores_to:
+          - name: 1080p Small WEB
+            score: 160
+          - name: 1080p Standard
+            score: 100
+      - trash_ids:
+          - c429417a57ea8c41d57e6990a8b0033f # DTS-HD MA
+          - 1808e4b9cee74e064dfae3f1db99dbfe # TrueHD
+          - 0d7824bb924701997f874e7ff7d4844a # TrueHD ATMOS
+          - b6fbafa7942952a13e17e2b1152b539a # ATMOS (undefined)
+        assign_scores_to:
+          - name: 1080p Small WEB
+            score: -175
+          - name: 1080p Standard
+            score: -75
+      - trash_ids:
+          - 1bef6c151fa35093015b0bfef18279e5 # 2160p
+        assign_scores_to:
+          - name: 1080p Small WEB
+            score: -10000
+          - name: 1080p Standard
+            score: -500
+      - trash_ids:
+          - 9965a052eb87b0d10313b1cea89eb451 # Remux Tier 01
+          - 8a1d0c3d7497e741736761a1da866a2e # Remux Tier 02
+        assign_scores_to:
+          - name: 1080p Small WEB
+            score: -400
+
+    # If you manage quality-definition limits via Recyclarr, tune 1080p around:
+    # min: 900-1200 MB/h, preferred: 1800-2200 MB/h, max: 2400-2500 MB/h.
+    # If not managed here, set equivalent limits in Sonarr UI quality settings.
