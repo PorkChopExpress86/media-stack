@@ -126,10 +126,10 @@ compose_volume_keys() {
 compose_volume_name() {
   local volume_key="$1"
 
-  local stack volume_name fallback_stack=""
+  # First try per-stack compose labels (works when containers are running).
+  local stack volume_name
   while IFS= read -r stack; do
     [[ -n "$stack" ]] || continue
-    [[ -n "$fallback_stack" ]] || fallback_stack="$stack"
     volume_name="$(docker volume ls -q \
       --filter "label=com.docker.compose.project=${stack}" \
       --filter "label=com.docker.compose.volume=${volume_key}" 2>/dev/null | head -1)"
@@ -139,9 +139,6 @@ compose_volume_name() {
     fi
   done < <(active_stack_names)
 
-  if [[ -n "$fallback_stack" ]]; then
-    printf '%s_%s\n' "$fallback_stack" "$volume_key"
-  else
-    printf '%s\n' "$volume_key"
-  fi
+  # Fall back to the legacy monolithic project prefix preserved across all stacks.
+  printf 'media-stack_%s\n' "$volume_key"
 }
