@@ -102,6 +102,28 @@ services:
       retries: 3
       start_period: 30s
 
+  scrutiny:
+    # This image intentionally tracks Scrutiny's master branch; no stable versioned omnibus tag is used here.
+    image: ghcr.io/analogj/scrutiny:master-omnibus
+    container_name: scrutiny
+    cap_add:
+      - SYS_RAWIO
+    ports:
+      - 8085:8080
+    volumes:
+      - scrutiny_config:/opt/scrutiny/config
+      - scrutiny_influxdb:/opt/scrutiny/influxdb
+      - /run/udev:/run/udev:ro
+    devices:
+      - /dev/sda:/dev/sda
+      - /dev/sdb:/dev/sdb
+      - /dev/sdc:/dev/sdc
+      - /dev/sdd:/dev/sdd
+      - /dev/sde:/dev/sde
+      - /dev/nvme0n1:/dev/nvme0n1
+    restart: unless-stopped
+    logging: *default-logging
+
 networks:
   monitoring_internal:
     internal: true
@@ -116,3 +138,7 @@ volumes:
   node_exporter_textfile:
     external: true
     name: media-stack_node_exporter_textfile
+  scrutiny_config:
+    name: media-stack_scrutiny_config
+  scrutiny_influxdb:
+    name: media-stack_scrutiny_influxdb

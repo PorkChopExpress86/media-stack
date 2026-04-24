@@ -82,6 +82,42 @@ services:
       retries: 3
       start_period: 60s
 
+  jellyseerr:
+    image: fallenbagel/jellyseerr:2.7.3
+    container_name: jellyseerr
+    environment:
+      - LOG_LEVEL=info
+      - TZ=${TZ:-America/Chicago}
+    ports:
+      - 5055:5055
+    volumes:
+      - jellyseerr_data:/app/config
+    restart: unless-stopped
+    logging: *default-logging
+    networks:
+      default:
+      media_proxy:
+        aliases:
+          - jellyseerr
+
+  kometa:
+    image: kometateam/kometa:v2.3.1
+    container_name: kometa
+    environment:
+      - TZ=${TZ:-America/Chicago}
+      - KOMETA_RUN=true
+      - PLEX_URL=${PLEX_URL}
+      - PLEX_TOKEN=${PLEX_TOKEN}
+      - TMDB_API_KEY=${TMDB_API_KEY}
+      - KOMETA_PLEXURL=${PLEX_URL}
+      - KOMETA_PLEXTOKEN=${PLEX_TOKEN}
+      - KOMETA_TMDBAPIKEY=${TMDB_API_KEY}
+    volumes:
+      - kometa_config:/config
+    # Create /config/config.yml first; Kometa runs on startup and processes on its schedule.
+    restart: unless-stopped
+    logging: *default-logging
+
   homeassistant:
     image: ghcr.io/home-assistant/home-assistant@sha256:ae0800c81fea16bc1241ce03bddb9c6260566e90f58b09d3e5a629e4f68bdc0b
     container_name: homeassistant
@@ -104,6 +140,11 @@ services:
       retries: 5
       start_period: 120s
 
+networks:
+  media_proxy:
+    external: true
+    name: media_proxy
+
 volumes:
   pinchflat_data:
     external: true
@@ -111,6 +152,10 @@ volumes:
   plex_data:
     external: true
     name: media-stack_plex_data
+  jellyseerr_data:
+    name: media-stack_jellyseerr_data
+  kometa_config:
+    name: media-stack_kometa_config
   homeassistant_data:
     external: true
     name: media-stack_homeassistant_data

@@ -1,0 +1,24 @@
+# Example Kometa config.
+# Copy this into the kometa /config volume as config.yml and replace placeholders.
+# Do not commit real Plex tokens or API keys.
+# This template uses Kometa config secrets:
+# - KOMETA_PLEXURL -> <<plexurl>>
+# - KOMETA_PLEXTOKEN -> <<plextoken>>
+# - KOMETA_TMDBAPIKEY -> <<tmdbapikey>>
+
+libraries:
+  Movies:
+    collection_files:
+      - default: basic
+      - default: imdb
+  TV Shows:
+    collection_files:
+      - default: basic
+
+plex:
+  url: <<plexurl>>
+  token: <<plextoken>>
+
+tmdb:
+  apikey: <<tmdbapikey>>
+  language: en

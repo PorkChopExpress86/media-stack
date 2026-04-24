@@ -5,6 +5,7 @@
 #   1. Nginx proxy domain regression  (docker compose run tests)
 #   2. Volume permission regression    (test-volume-permissions.sh)
 #   3. VPN namespace/connectivity      (test-vpn-namespace-connectivity.sh)
+#   4. Container health/reachability   (test-container-health-reachability.sh)
 #
 # Exit codes:
 #   0 — all suites passed
@@ -52,6 +53,11 @@ run_suite "Volume permission regression" \
 run_suite "VPN namespace/connectivity regression" \
   bash "${SCRIPT_DIR}/test-vpn-namespace-connectivity.sh"
 
+# ─── suite 4: container health/reachability regression ───────────────────────
+
+run_suite "Container health/reachability regression" \
+  bash "${SCRIPT_DIR}/test-container-health-reachability.sh"
+
 # ─── overall result ──────────────────────────────────────────────────────────
 
 echo
@@ -60,6 +66,6 @@ if $overall_pass; then
   echo "  RESULT: ALL SUITES PASSED"
   exit 0
 else
-  echo "  RESULT: ONE OR MORE SUITES FAILED — check test.log, volume-permissions.log, and vpn-namespace-connectivity.log"
+  echo "  RESULT: ONE OR MORE SUITES FAILED — check test.log, volume-permissions.log, vpn-namespace-connectivity.log, and container-health-reachability.log"
   exit 1
 fi

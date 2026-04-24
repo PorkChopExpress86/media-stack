@@ -158,6 +158,25 @@ services:
       retries: 3
       start_period: 60s
 
+  recyclarr:
+    image: ghcr.io/recyclarr/recyclarr:8.5.1
+    container_name: recyclarr
+    environment:
+      - TZ=${TZ:-America/Chicago}
+      - PUID=1000
+      - PGID=1000
+      - RADARR_API_KEY=${RADARR_API_KEY}
+      - SONARR_API_KEY=${SONARR_API_KEY}
+    volumes:
+      - recyclarr_data:/config
+    # Recyclarr requires /config/recyclarr.yml.
+    # The config file can reference RADARR_API_KEY and SONARR_API_KEY via !env_var.
+    # Use Radarr URL http://vpn:7878 and Sonarr URL http://vpn:8989.
+    restart: unless-stopped
+    logging: *default-logging
+    networks:
+      - media_proxy
+
   radarr:
     image: lscr.io/linuxserver/radarr@sha256:b01097ad2d948c9f5eca39eb60bb529e2e55b0738c4bf7db09383bef0abab59d
     container_name: radarr
@@ -314,6 +333,8 @@ volumes:
   decluttarr_data:
     external: true
     name: media-stack_decluttarr_data
+  recyclarr_data:
+    name: media-stack_recyclarr_data
   node_exporter_textfile:
     external: true
     name: media-stack_node_exporter_textfile

@@ -22,6 +22,7 @@ A comprehensive Docker Compose setup for a home media server with automated back
 | | Plex | 32400 |
 | | Audiobookshelf | 13378 |
 | | Pinchflat (YouTube) | 8945 |
+| **Media Requests** | Jellyseerr | 5055 |
 | **Arr Stack** | Prowlarr | 9696 (via VPN) |
 | | Radarr | 7878 (via VPN) |
 | | Sonarr | 8989 (via VPN) |
@@ -29,6 +30,8 @@ A comprehensive Docker Compose setup for a home media server with automated back
 | | qBittorrent | 8080 (via VPN) |
 | | FlareSolverr | internal only (via VPN namespace) |
 | | Decluttarr | — |
+| | Recyclarr | internal only |
+| **Media Management** | Kometa | internal only |
 | **Photos** | Immich | 2283 |
 | **Home Automation** | Home Assistant | 8123 (host network) |
 | **Gaming** | Minecraft Bedrock (Survival) | 19132/udp (via NPM) |
@@ -42,6 +45,7 @@ A comprehensive Docker Compose setup for a home media server with automated back
 | | cAdvisor | internal only |
 | | Node Exporter | internal only |
 | | Exportarr (Sonarr, Radarr, Prowlarr) | internal only |
+| | Scrutiny | 8085 |
 
 ## 🔧 Prerequisites
 
@@ -163,6 +167,46 @@ Troubleshooting:
 	- `kickasstorrents.ws` (definition: `kickasstorrents-ws`)
 - After enabling any FlareSolverr-protected indexer, run **Test** from Prowlarr to confirm connectivity.
 - If FlareSolverr or Gluetun is restarted, Prowlarr may need a quick re-test on affected indexers.
+
+### Optional Media Stack Enhancements
+
+Jellyseerr:
+
+- Access URL: `http://<host>:5055`.
+- Used for media requests.
+- Connect it to Plex and/or Jellyfin.
+- Connect it to Radarr at `http://vpn:7878`.
+- Connect it to Sonarr at `http://vpn:8989`.
+- Can be proxied through Nginx Proxy Manager.
+
+Recyclarr:
+
+- Used to sync TRaSH Guides-style quality profiles and custom formats into Radarr/Sonarr.
+- Config is stored in the `recyclarr_data` Docker volume at `/config`.
+- Requires Radarr and Sonarr API keys.
+- Use these service URLs in `recyclarr.yml`:
+- Radarr: `http://vpn:7878`
+- Sonarr: `http://vpn:8989`
+- Should not be exposed publicly.
+
+Scrutiny:
+
+- Access URL: `http://<host>:8085`.
+- Used for SMART monitoring and drive health.
+- Uses `ghcr.io/analogj/scrutiny:master-omnibus`, which intentionally tracks Scrutiny's master branch.
+- Requires manual disk device mappings in `monitoring/compose.yml`.
+- SATA example: `/dev/sda:/dev/sda`.
+- NVMe example: `/dev/nvme0:/dev/nvme0`.
+- If disk mappings are wrong or missing, drives may not appear.
+
+Kometa:
+
+- Used for Plex collections, overlays, posters, and metadata automation.
+- Config is stored in the `kometa_config` Docker volume at `/config`.
+- Requires a Plex URL, Plex token, and metadata provider API keys such as TMDb.
+- Do not commit real secrets.
+- Usually run manually or on a schedule after `config.yml` is created.
+- Should not be exposed publicly.
 
 ## 🗂️ Project Layout
 

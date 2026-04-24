@@ -1,0 +1,15 @@
+# Example Recyclarr config.
+# Copy this into the recyclarr /config volume as recyclarr.yml and replace placeholders.
+# Expand this using the Recyclarr and TRaSH Guides documentation.
+
+radarr:
+  movies:
+    base_url: http://vpn:7878
+    api_key: !env_var RADARR_API_KEY
+    delete_old_custom_formats: true
+
+sonarr:
+  tv:
+    base_url: http://vpn:8989
+    api_key: !env_var SONARR_API_KEY
+    delete_old_custom_formats: true
