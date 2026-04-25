@@ -70,7 +70,7 @@ All named volumes are declared `external: true` and carry the `media-stack_` pre
 ### Environment files
 - Root `.env` / `.env.example` — shared host paths, VPN credentials, API keys, Immich DB settings, Watchtower email, backup tuning.
 - Each stack directory also has its own `.env` / `.env.example` for stack-specific overrides. All live `.env` files are gitignored.
-- Stack-defined variable names use `lower_snake_case`; upstream/app-required names keep `UPPER_SNAKE_CASE` exactly as the image expects.
+- All variable names use `UPPER_SNAKE_CASE` regardless of whether they are stack-defined or app-required.
 
 ### Regression test container
 `Dockerfile.tests` (project root) builds a Python/Alpine image that runs `scripts/linux/test-domains.sh`. It reads Nginx Proxy Manager's `database.sqlite` directly from the `nginx_data` volume to discover enabled proxy hosts, then sends requests through the `nginx` container. Known-good redirect baselines live in `nginx-proxy/config/nginx-proxy-regression-baseline.json`.
@@ -82,8 +82,7 @@ All named volumes are declared `external: true` and carry the `media-stack_` pre
 
 | Artifact | Convention | Example |
 |----------|-----------|---------|
-| Stack-defined `.env` variables | `lower_snake_case` | `qbittorrent_downloads` |
-| App-required `.env` variables | `UPPER_SNAKE_CASE` | `RADARR_API_KEY` |
+| All `.env` variables | `UPPER_SNAKE_CASE` | `QBITTORRENT_DOWNLOADS` |
 | Service names / `container_name` | `kebab-case` | `minecraft-survival` |
 | Named volume keys | `lower_snake_case` + `_data` suffix | `prowlarr_data` |
 | Scripts in `scripts/linux/` | `kebab-case` | `backup-all.sh` |
