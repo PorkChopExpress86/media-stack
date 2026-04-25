@@ -12,21 +12,21 @@ services:
     container_name: jellyfin
     environment:
       - TZ=${TZ:-America/Chicago}
-      - JELLYFIN_PublishedServerUrl=${jellyfin_url}
+      - JELLYFIN_PublishedServerUrl=${JELLYFIN_URL}
     group_add:
       - "992"
       - "44"
     volumes:
       - jellyfin_config:/config
       - jellyfin_cache:/cache
-      - ${movies}:/media/movies
-      - ${tv_shows}:/media/tv_shows
-      - ${kids_movies}:/media/kids_movies
-      - ${kids_tv_shows}:/media/kids_tv_shows
-      - ${other_movies}:/media/other_movies
-      - ${other_shows}:/media/other_shows
-      - ${pinchflat_downloads}:/pinchflat
-      - ${home_movies}:/media/home_movies
+      - ${MOVIES}:/media/movies
+      - ${TV_SHOWS}:/media/tv_shows
+      - ${KIDS_MOVIES}:/media/kids_movies
+      - ${KIDS_TV_SHOWS}:/media/kids_tv_shows
+      - ${OTHER_MOVIES}:/media/other_movies
+      - ${OTHER_SHOWS}:/media/other_shows
+      - ${PINCHFLAT_DOWNLOADS}:/pinchflat
+      - ${HOME_MOVIES}:/media/home_movies
     devices:
       - /dev/dri:/dev/dri
     ports:
