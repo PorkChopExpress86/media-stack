@@ -22,6 +22,7 @@ data/**/*
 !data/**/.gitkeep
 lan-apps/data/**/*
 !lan-apps/data/**/.gitkeep
+proxied-apps/data/
 proxied-apps/data/**/*
 !proxied-apps/data/**/.gitkeep
 
