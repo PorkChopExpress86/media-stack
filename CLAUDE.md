@@ -17,7 +17,30 @@ docker compose logs -f [service]
 docker compose restart [service]
 ```
 
-### Run nginx proxy regression tests
+### Run full regression suite
+```bash
+bash scripts/linux/run-regression-tests.sh
+```
+
+Runs six suites in order:
+| Suite | Script | Needs containers? |
+|---|---|---|
+| Compose config validation | `test-compose-config.sh` | No |
+| Env var completeness | `test-env-completeness.sh` | No |
+| Nginx proxy domain regression | `Dockerfile.tests` container | Yes |
+| Volume permission regression | `test-volume-permissions.sh` | Yes |
+| VPN namespace/connectivity | `test-vpn-namespace-connectivity.sh` | Yes |
+| Container health/reachability | `test-container-health-reachability.sh` | Yes |
+
+Each suite writes a log to the project root (e.g. `compose-config.log`, `env-completeness.log`, `test.log`).
+
+### Run Tier 1 static checks only (no containers required)
+```bash
+bash scripts/linux/test-compose-config.sh
+bash scripts/linux/test-env-completeness.sh
+```
+
+### Run nginx proxy regression tests standalone
 ```bash
 # From project root (uses nginx-proxy compose project)
 docker compose -f nginx-proxy/compose.yml build tests
@@ -25,11 +48,6 @@ docker compose -f nginx-proxy/compose.yml run --rm -T tests
 
 # Single domain only
 docker compose -f nginx-proxy/compose.yml run --rm -T -e TEST_DOMAIN=jellyfin.example.com tests
-```
-
-### Run full regression suite
-```bash
-bash scripts/linux/run-regression-tests.sh
 ```
 
 ### Run a manual backup
@@ -72,8 +90,21 @@ All named volumes are declared `external: true` and carry the `media-stack_` pre
 - Each stack directory also has its own `.env` / `.env.example` for stack-specific overrides. All live `.env` files are gitignored.
 - All variable names use `UPPER_SNAKE_CASE` regardless of whether they are stack-defined or app-required.
 
-### Regression test container
-`Dockerfile.tests` (project root) builds a Python/Alpine image that runs `scripts/linux/test-domains.sh`. It reads Nginx Proxy Manager's `database.sqlite` directly from the `nginx_data` volume to discover enabled proxy hosts, then sends requests through the `nginx` container. Known-good redirect baselines live in `nginx-proxy/config/nginx-proxy-regression-baseline.json`.
+### Test suite
+
+The full regression suite is run by `scripts/linux/run-regression-tests.sh` and is also executed daily at 03:00 UTC via GitHub Actions (`.github/workflows/ci.yml`).
+
+**Tier 1 — Static (no containers required):**
+- `test-compose-config.sh` — validates all `compose.yml` files parse correctly using `docker compose config --no-interpolate`
+- `test-env-completeness.sh` — verifies every `${VAR}` referenced in a `compose.yml` is defined in that stack's `.env.example`
+
+**Tier 2 — Live (requires running containers):**
+- Nginx proxy domain regression — `Dockerfile.tests` container queries NPM's SQLite database for enabled proxy hosts and probes each via curl; baselines live in `nginx-proxy/config/nginx-proxy-regression-baseline.json`
+- Volume permission regression — `test-volume-permissions.sh`
+- VPN namespace/connectivity — `test-vpn-namespace-connectivity.sh`
+- Container health/reachability — `test-container-health-reachability.sh`
+
+**CI:** Tier 1 runs on `ubuntu-latest` (GitHub-hosted). Tier 2 runs on the `self-hosted` runner at `/mnt/samsung/Docker/MediaServer` where live `.env` files and containers are present. Scheduled runs fire against `main`; the schedule does not activate on feature branches until merged.
 
 ### Backup system
 `scripts/linux/backup-all.sh` (runs weekly via cron, Sundays 03:00) backs up all named Docker volumes and bind-mounted app data as `.tar.gz` archives under `vol_bkup/YYYYMMDD-NNN/`. Retains the three most recent sets. Immich Postgres is dumped via `pg_dumpall`. Immich photo/video uploads are excluded due to size. Compression is tunable via `BACKUP_GZIP_LEVEL` and `BACKUP_COMPRESSOR` in root `.env`.
