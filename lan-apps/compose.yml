@@ -6,29 +6,6 @@ x-logging: &default-logging
     max-file: "3"
 
 services:
-  actual_server:
-    container_name: actual_server
-    image: docker.io/actualbudget/actual-server@sha256:b0e732e2c41b3dc468a71548e88ef76d3f0c157fc43d15fa05d14ec1c5747e1e
-    user: "1000:1001"
-    ports:
-      - '127.0.0.1:5006:5006'
-    volumes:
-      - ./lan-apps/data/budget:/data
-    restart: always
-    logging: *default-logging
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "node",
-          "-e",
-          "require('http').get('http://127.0.0.1:5006', r => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))",
-        ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-
   pinchflat:
     image: ghcr.io/kieraneglin/pinchflat@sha256:01b4f98aabaf3f5fe394213f7a32578c9e84e42080f52e2f8334021a4473b202
     container_name: pinchflat
@@ -39,7 +16,7 @@ services:
       - '127.0.0.1:8945:8945'
     volumes:
       - pinchflat_data:/config
-      - "${pinchflat_downloads}:/downloads"
+      - "${PINCHFLAT_DOWNLOADS}:/downloads"
     restart: always
     logging: *default-logging
     healthcheck:
@@ -57,18 +34,18 @@ services:
       - PGID=1001
       - TZ=${TZ:-America/Chicago}
       - VERSION=docker
-      - PLEX_CLAIM=${plex_claim}
+      - PLEX_CLAIM=${PLEX_CLAIM}
     volumes:
       - plex_data:/config
-      - ${movies}:/media/movies
-      - ${tv_shows}:/media/tv_shows
-      - ${kids_movies}:/media/kids_movies
-      - ${kids_tv_shows}:/media/kids_tv_shows
-      - ${other_movies}:/media/other_movies
-      - ${other_shows}:/media/other_shows
-      - ${music}:/media/music
-      - ${pinchflat_downloads}:/pinchflat
-      - ${home_movies}:/media/home_movies
+      - ${MOVIES}:/media/movies
+      - ${TV_SHOWS}:/media/tv_shows
+      - ${KIDS_MOVIES}:/media/kids_movies
+      - ${KIDS_TV_SHOWS}:/media/kids_tv_shows
+      - ${OTHER_MOVIES}:/media/other_movies
+      - ${OTHER_SHOWS}:/media/other_shows
+      - ${MUSIC}:/media/music
+      - ${PINCHFLAT_DOWNLOADS}:/pinchflat
+      - ${HOME_MOVIES}:/media/home_movies
     devices:
       - /dev/dri:/dev/dri
     ports:
