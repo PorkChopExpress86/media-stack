@@ -4,6 +4,8 @@
 # Tests run (in order):
 #   0a. Compose config validation      (test-compose-config.sh)
 #   0b. Env var completeness           (test-env-completeness.sh)
+#   0c. Secret scan                    (test-secret-scan.sh)
+#   0d. Compose orphan detection       (test-compose-orphans.sh)
 #   1.  Nginx proxy domain regression  (docker compose run tests)
 #   2.  Volume permission regression   (test-volume-permissions.sh)
 #   3.  VPN namespace/connectivity     (test-vpn-namespace-connectivity.sh)
@@ -50,6 +52,16 @@ run_suite "Compose config validation" \
 run_suite "Env var completeness" \
   bash "${SCRIPT_DIR}/test-env-completeness.sh"
 
+# ─── suite 0c: tracked secret scan ───────────────────────────────────────────
+
+run_suite "Tracked secret scan" \
+  bash "${SCRIPT_DIR}/test-secret-scan.sh"
+
+# ─── suite 0d: compose orphan detection ──────────────────────────────────────
+
+run_suite "Compose orphan detection" \
+  bash "${SCRIPT_DIR}/test-compose-orphans.sh"
+
 # ─── suite 1: nginx proxy domain regression ──────────────────────────────────
 
 run_suite "Nginx proxy domain regression" \
@@ -78,6 +90,6 @@ if $overall_pass; then
   echo "  RESULT: ALL SUITES PASSED"
   exit 0
 else
-  echo "  RESULT: ONE OR MORE SUITES FAILED — check compose-config.log, env-completeness.log, test.log, volume-permissions.log, vpn-namespace-connectivity.log, and container-health-reachability.log"
+  echo "  RESULT: ONE OR MORE SUITES FAILED — check compose-config.log, env-completeness.log, secret-scan.log, compose-orphans.log, test.log, volume-permissions.log, vpn-namespace-connectivity.log, and container-health-reachability.log"
   exit 1
 fi

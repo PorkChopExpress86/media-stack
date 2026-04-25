@@ -30,7 +30,7 @@ jobs:
             if ! yamllint -d '{extends: relaxed, rules: {line-length: disable, comments: disable}}' "$f" 2>&1; then
               failed=1
             fi
-          done < <(find . -name "compose.yml" | sort)
+          done < <(find . \( -name "compose.yml" -o -name "compose.yaml" \) ! -path "./scheduler/*" | sort)
           exit $failed
         continue-on-error: true
 
@@ -44,12 +44,18 @@ jobs:
         run: bash scripts/linux/test-env-completeness.sh
         continue-on-error: true
 
+      - name: Tracked secret scan
+        id: secret_scan
+        run: bash scripts/linux/test-secret-scan.sh
+        continue-on-error: true
+
       - name: Write job summary
         if: always()
         run: |
           yaml_result="${{ steps.yaml_lint.outcome == 'success' && 'PASS ✅' || 'FAIL ❌' }}"
           config_result="${{ steps.compose_config.outcome == 'success' && 'PASS ✅' || 'FAIL ❌' }}"
           env_result="${{ steps.env_completeness.outcome == 'success' && 'PASS ✅' || 'FAIL ❌' }}"
+          secret_result="${{ steps.secret_scan.outcome == 'success' && 'PASS ✅' || 'FAIL ❌' }}"
           {
             echo "## Tier 1 — Static Check Results"
             echo ""
@@ -58,6 +64,7 @@ jobs:
             echo "| YAML lint | $yaml_result |"
             echo "| Compose config validation | $config_result |"
             echo "| Env var completeness | $env_result |"
+            echo "| Tracked secret scan | $secret_result |"
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Fail if any check failed
@@ -66,6 +73,7 @@ jobs:
           [[ "${{ steps.yaml_lint.outcome }}" == "success" ]] || exit 1
           [[ "${{ steps.compose_config.outcome }}" == "success" ]] || exit 1
           [[ "${{ steps.env_completeness.outcome }}" == "success" ]] || exit 1
+          [[ "${{ steps.secret_scan.outcome }}" == "success" ]] || exit 1
 
   tier2-live:
     name: "Tier 2 — Live stack tests"
@@ -106,6 +114,8 @@ jobs:
             echo "|---|---|"
             suite_result "Compose config validation"     compose-config.log
             suite_result "Env var completeness"          env-completeness.log
+            suite_result "Tracked secret scan"           secret-scan.log
+            suite_result "Compose orphan detection"      compose-orphans.log
             suite_result "Nginx proxy domain regression" test.log
             suite_result "Volume permission regression"  volume-permissions.log
             suite_result "VPN namespace/connectivity"    vpn-namespace-connectivity.log

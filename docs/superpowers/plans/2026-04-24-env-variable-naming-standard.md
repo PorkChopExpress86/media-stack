@@ -56,7 +56,7 @@ TZ=America/Chicago
 
 # ── Gluetun (VPN) ─────────────────────────────────────────────────────────────
 VPN_USERNAME=p4913068
-VPN_PASSWORD=fy3XpGMcDN
+VPN_PASSWORD=
 
 # ── qBittorrent ───────────────────────────────────────────────────────────────
 QBITTORRENT_DOWNLOADS=/mnt/wd_hdd_1tb/qbittorrent
@@ -72,9 +72,9 @@ KIDS_MOVIES=/mnt/media/kids_movies
 KIDS_TV_SHOWS=/mnt/media/kids_tv_shows
 
 # ── Radarr / Sonarr / Prowlarr (Decluttarr, Recyclarr) ───────────────────────
-RADARR_API_KEY=f5acaa65ad064f0b8ce5899302f49131
-SONARR_API_KEY=57fd8b447d1b45b79f5785ac72de3c15
-PROWLARR_API_KEY=ea4e371c34934de189f19dbf38c50005
+RADARR_API_KEY=
+SONARR_API_KEY=
+PROWLARR_API_KEY=
 ```
 
 - [ ] **Step 2: Rewrite `arr-stack/.env.example`**
@@ -283,14 +283,14 @@ TZ=America/Chicago
 PINCHFLAT_DOWNLOADS=/mnt/media/pinchflat
 
 # ── Plex ──────────────────────────────────────────────────────────────────────
-PLEX_CLAIM=claim-WnJ1h8RWefoimxTsZQXy
+PLEX_CLAIM=
 
 # ── Kometa ────────────────────────────────────────────────────────────────────
 # Kometa config lives in its /config volume.
 # Do not commit real Plex tokens or TMDb API keys.
 PLEX_URL=http://plex:32400
-PLEX_TOKEN=yGRjRa4j7zxRWcit2UXy
-TMDB_API_KEY=d79560e496bdeedd013f916d16447318
+PLEX_TOKEN=
+TMDB_API_KEY=
 
 # ── Shared media library paths ────────────────────────────────────────────────
 MOVIES=/mnt/media/movies
@@ -460,11 +460,11 @@ DOCKER_GID=986
 
 # ── Watchtower ────────────────────────────────────────────────────────────────
 EMAIL=blake.b.8726@gmail.com
-GMAIL_APP_PASSWORD=cajc xrgj snqu nxpo
+GMAIL_APP_PASSWORD=
 
 # ── Grafana ───────────────────────────────────────────────────────────────────
 GRAFANA_ADMIN_USER=admin
-GRAFANA_ADMIN_PASSWORD=7758d8bab228ab4228406dd0912fe3acfc1b4769930a67a0
+GRAFANA_ADMIN_PASSWORD=
 ```
 
 - [ ] **Step 2: Rewrite `monitoring/.env.example`**
@@ -560,7 +560,7 @@ PINCHFLAT_DOWNLOADS=/mnt/media/pinchflat
 
 # ── Gluetun (VPN) ─────────────────────────────────────────────────────────────
 VPN_USERNAME=p4913068
-VPN_PASSWORD=fy3XpGMcDN
+VPN_PASSWORD=
 
 # ── Jellyfin ──────────────────────────────────────────────────────────────────
 JELLYFIN_URL=https://jellyfin.ohmygoshwhatever.com
@@ -570,37 +570,37 @@ JELLYFIN_URL=https://jellyfin.ohmygoshwhatever.com
 JELLYSEERR_URL=
 
 # ── Plex ──────────────────────────────────────────────────────────────────────
-PLEX_CLAIM=claim-WnJ1h8RWefoimxTsZQXy
+PLEX_CLAIM=
 
 # ── Kometa ────────────────────────────────────────────────────────────────────
 # Do not commit real Plex tokens or TMDb API keys.
 PLEX_URL=http://plex:32400
-PLEX_TOKEN=yGRjRa4j7zxRWcit2UXy
-TMDB_API_KEY=d79560e496bdeedd013f916d16447318
+PLEX_TOKEN=
+TMDB_API_KEY=
 
 # ── Pi-hole ───────────────────────────────────────────────────────────────────
-PIHOLE_PASSWORD=VT3H8HWGo68qMV
+PIHOLE_PASSWORD=
 
 # ── Radarr / Sonarr / Prowlarr (Decluttarr) ──────────────────────────────────
-RADARR_API_KEY=f5acaa65ad064f0b8ce5899302f49131
-SONARR_API_KEY=57fd8b447d1b45b79f5785ac72de3c15
-PROWLARR_API_KEY=ea4e371c34934de189f19dbf38c50005
+RADARR_API_KEY=
+SONARR_API_KEY=
+PROWLARR_API_KEY=
 
 # ── Watchtower ────────────────────────────────────────────────────────────────
 DOCKER_GID=986
 EMAIL=blake.b.8726@gmail.com
-GMAIL_APP_PASSWORD=cajc xrgj snqu nxpo
+GMAIL_APP_PASSWORD=
 WATCHTOWER_NOTIFICATION_EMAIL_FROM=blake.b.8726@gmail.com
 WATCHTOWER_NOTIFICATION_EMAIL_TO=blake.b.8726@gmail.com
 WATCHTOWER_NOTIFICATION_EMAIL_SERVER=smtp.gmail.com
 WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PORT=587
 WATCHTOWER_NOTIFICATION_EMAIL_SERVER_USER=blake.b.8726@gmail.com
-WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PASSWORD=xqbp ygio tqra bwms
+WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PASSWORD=
 WATCHTOWER_NOTIFICATION_EMAIL_DELAY=2
 
 # ── Grafana ───────────────────────────────────────────────────────────────────
 GRAFANA_ADMIN_USER=admin
-GRAFANA_ADMIN_PASSWORD=7758d8bab228ab4228406dd0912fe3acfc1b4769930a67a0
+GRAFANA_ADMIN_PASSWORD=
 
 # ── Immich ────────────────────────────────────────────────────────────────────
 # https://immich.app/docs/install/environment-variables
@@ -608,8 +608,8 @@ IMMICH_VERSION=v2
 IMMICH_ML_VERSION=v2
 UPLOAD_LOCATION=/mnt/immich/Immich/upload
 DB_DATA_LOCATION=/mnt/immich/Immich/postgres
-REDIS_PASSWORD=95a4300284f841336fdf82adc63d00dcf60141492f2279847b34e17ef043ea4a
-DB_PASSWORD=5MfyjYDtYw8c90WW4C3vG+45FLTUhK4U
+REDIS_PASSWORD=
+DB_PASSWORD=
 DB_USERNAME=postgres
 DB_DATABASE_NAME=immich
 DB_IMAGE=ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0

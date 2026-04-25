@@ -34,7 +34,6 @@ services:
       - PGID=1001
       - TZ=${TZ:-America/Chicago}
       - VERSION=docker
-      - PLEX_CLAIM=${PLEX_CLAIM}
     volumes:
       - plex_data:/config
       - ${MOVIES}:/media/movies

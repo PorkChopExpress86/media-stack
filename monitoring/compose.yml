@@ -57,6 +57,8 @@ services:
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:v0.55.1
     container_name: cadvisor
+    # cAdvisor needs privileged host access to collect full Docker/container metrics.
+    # It remains on the internal monitoring network with no published host port.
     privileged: true
     restart: always
     logging: *default-logging

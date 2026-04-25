@@ -217,9 +217,9 @@ This repository is organized by function so day-to-day operations are easier to 
 - `arr-stack/compose.yml` — Gluetun, qBittorrent, *arr apps, FlareSolverr, Decluttarr, qBittorrent metrics.
 - `immich/compose.yml` — Immich server, machine learning, Redis, Postgres.
 - `immich/config/` — Immich hardware acceleration snippets for ML and transcoding.
-- `lan-apps/compose.yml` — direct/LAN apps: Actual Budget, Pinchflat, Plex, Home Assistant.
+- `lan-apps/compose.yml` — direct/LAN apps: Pinchflat, Plex, Jellyseerr, Kometa, Home Assistant.
 - `proxied-apps/compose.yml` — other standalone apps reached by NPM: Audiobookshelf, DerbyNet, Minecraft.
-- `monitoring/compose.yml` — Prometheus, Grafana, cAdvisor, node-exporter, Watchtower.
+- `monitoring/compose.yml` — Prometheus, Grafana, cAdvisor, node-exporter, and Scrutiny.
 - `.env` / `.env.example` — local host secrets and shared environment settings.
 - `scripts/linux/` — operational Linux scripts (backup, restore, update, maintenance).
 - `scripts/windows/` — PowerShell equivalents for Windows-based operations.
@@ -405,6 +405,7 @@ Prometheus retention is set to 15 days. Exporters and cAdvisor run on internal-o
 ## 🔒 Security
 
 - Change all default passwords (NPM, Grafana, Postgres)
+- Keep Plex claim tokens out of `.env` after the server has been claimed.
 - Keep `.env` private — it's excluded from git via `.gitignore`
 - *arr services and qBittorrent route through Gluetun VPN
 - NPM admin port (81) is bound to localhost only

@@ -49,6 +49,11 @@ check_container_state() {
   local state="$4"
   local health_status="$5"
 
+  if [[ "$service" == "kometa" && "$state" != "running" ]]; then
+    log_line "[$(timestamp)] PASS stack=${stack} service=${service} container=${name} check=running state=${state} reason=expected-one-shot-runner"
+    return 0
+  fi
+
   if [[ "$state" != "running" ]]; then
     log_line "[$(timestamp)] FAIL stack=${stack} service=${service} container=${name} check=running state=${state}"
     return 1
