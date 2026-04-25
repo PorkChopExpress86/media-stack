@@ -16,12 +16,12 @@ services:
     ports:
       - 127.0.0.1:8050:80
     volumes:
-      - ./proxied-apps/data/derbynet:/var/lib/derbynet
-      - ./proxied-apps/data/derbynet/nginx:/var/lib/nginx
-      - ./proxied-apps/data/derbynet/nginx-log:/var/log/nginx
-      - ./proxied-apps/data/derbynet/php84:/var/log/php84
-      - ./proxied-apps/data/derbynet/run-nginx:/run/nginx
-      - ./proxied-apps/data/derbynet/run:/var/run/php
+      - ./data/derbynet:/var/lib/derbynet
+      - ./data/derbynet/nginx:/var/lib/nginx
+      - ./data/derbynet/nginx-log:/var/log/nginx
+      - ./data/derbynet/php84:/var/log/php84
+      - ./data/derbynet/run-nginx:/run/nginx
+      - ./data/derbynet/run:/var/run/php
       - /etc/localtime:/etc/localtime:ro
     restart: always
     logging: *default-logging
@@ -44,8 +44,8 @@ services:
     volumes:
       - audiobookshelf_data:/config
       - audiobookshelf_metadata:/metadata
-      - ${audiobooks}:/audiobooks
-      - ${podcasts}:/podcasts
+      - ${AUDIOBOOKS}:/audiobooks
+      - ${PODCASTS}:/podcasts
     environment:
       - TZ=${TZ:-America/Chicago}
     restart: always
@@ -77,7 +77,7 @@ services:
       LEVEL_SEED: "42"
       LEVEL_TYPE: "DEFAULT"
     volumes:
-      - ./proxied-apps/data/survival:/data
+      - ./data/survival:/data
     restart: unless-stopped
     logging: *default-logging
     stdin_open: true
@@ -103,7 +103,7 @@ services:
       LEVEL_SEED: "42"
       LEVEL_TYPE: "DEFAULT"
     volumes:
-      - ./proxied-apps/data/creative:/data
+      - ./data/creative:/data
     restart: unless-stopped
     logging: *default-logging
     stdin_open: true
