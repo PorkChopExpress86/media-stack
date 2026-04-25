@@ -217,7 +217,6 @@ PHASE2_START=$SECONDS
 
 declare -A BIND_MOUNTS=(
     ["derbynet"]="${PROJECT_DIR}/proxied-apps/data/derbynet"
-    ["budget"]="${PROJECT_DIR}/lan-apps/data/budget"
     ["minecraft-survival"]="${PROJECT_DIR}/proxied-apps/data/survival"
     ["minecraft-creative"]="${PROJECT_DIR}/proxied-apps/data/creative"
 )
@@ -329,6 +328,10 @@ if [[ $TOTAL -gt $MAX_BACKUPS ]]; then
 else
     log "  $TOTAL backup sets found (limit: $MAX_BACKUPS). No cleanup needed."
 fi
+
+# --- 6. Fix ownership so specter can manage backup files ---------------------
+# The backup script may run as root; ensure the project owner retains access.
+chown -R 1000:1000 "$BKUP_BASE_DIR"
 
 # --- Done --------------------------------------------------------------------
 if [[ $ERRORS -gt 0 ]]; then

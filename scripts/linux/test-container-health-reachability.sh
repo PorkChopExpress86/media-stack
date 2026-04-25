@@ -125,7 +125,6 @@ fi
 
 endpoint_for_service() {
   case "$1" in
-    actual_server) printf '%s\n' "http://127.0.0.1:5006" ;;
     audiobookshelf) printf '%s\n' "http://127.0.0.1:80" ;;
     bazarr) printf '%s\n' "http://127.0.0.1:6767" ;;
     derbynet) printf '%s\n' "http://127.0.0.1:80" ;;
