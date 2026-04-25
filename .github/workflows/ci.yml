@@ -1,0 +1,118 @@
+name: Media Server CI
+
+on:
+  push:
+  pull_request:
+    branches: [main, modular-compose-migration]
+  schedule:
+    # Runs daily at 03:00 UTC against the default branch (main).
+    # While on a feature branch, scheduled runs only fire after merging to main.
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  tier1-static:
+    name: "Tier 1 — Static checks"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install yamllint
+        run: pip install --quiet yamllint
+
+      - name: YAML lint — all compose files
+        id: yaml_lint
+        run: |
+          failed=0
+          while IFS= read -r f; do
+            if ! yamllint -d '{extends: relaxed, rules: {line-length: disable, comments: disable}}' "$f" 2>&1; then
+              failed=1
+            fi
+          done < <(find . -name "compose.yml" | sort)
+          exit $failed
+        continue-on-error: true
+
+      - name: Compose config validation
+        id: compose_config
+        run: bash scripts/linux/test-compose-config.sh
+        continue-on-error: true
+
+      - name: Env var completeness check
+        id: env_completeness
+        run: bash scripts/linux/test-env-completeness.sh
+        continue-on-error: true
+
+      - name: Write job summary
+        if: always()
+        run: |
+          yaml_result="${{ steps.yaml_lint.outcome == 'success' && 'PASS ✅' || 'FAIL ❌' }}"
+          config_result="${{ steps.compose_config.outcome == 'success' && 'PASS ✅' || 'FAIL ❌' }}"
+          env_result="${{ steps.env_completeness.outcome == 'success' && 'PASS ✅' || 'FAIL ❌' }}"
+          {
+            echo "## Tier 1 — Static Check Results"
+            echo ""
+            echo "| Check | Result |"
+            echo "|---|---|"
+            echo "| YAML lint | $yaml_result |"
+            echo "| Compose config validation | $config_result |"
+            echo "| Env var completeness | $env_result |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Fail if any check failed
+        if: always()
+        run: |
+          [[ "${{ steps.yaml_lint.outcome }}" == "success" ]] || exit 1
+          [[ "${{ steps.compose_config.outcome }}" == "success" ]] || exit 1
+          [[ "${{ steps.env_completeness.outcome }}" == "success" ]] || exit 1
+
+  tier2-live:
+    name: "Tier 2 — Live stack tests"
+    runs-on: self-hosted
+    # Run after Tier 1; always run on schedule even if Tier 1 failed
+    needs: tier1-static
+    if: ${{ always() && (github.event_name == 'schedule' || needs.tier1-static.result == 'success') }}
+
+    steps:
+      - name: Run full live regression suite
+        id: live_suite
+        # Use the installed path directly — live .env files are gitignored and
+        # not present in the CI checkout. The self-hosted runner has the full
+        # stack at /mnt/samsung/Docker/MediaServer.
+        working-directory: /mnt/samsung/Docker/MediaServer
+        run: bash scripts/linux/run-regression-tests.sh
+        continue-on-error: true
+
+      - name: Write job summary
+        if: always()
+        working-directory: /mnt/samsung/Docker/MediaServer
+        run: |
+          suite_result() {
+            local name="$1" log="$2"
+            local r
+            if [[ -f "$log" ]]; then
+              r=$(grep '\[SUITE' "$log" 2>/dev/null | grep -oP '(PASS|FAIL)' | tail -1 || echo "NO_DATA")
+            else
+              r="NO_DATA"
+            fi
+            echo "| $name | $([ "$r" = "PASS" ] && echo "PASS ✅" || echo "FAIL ❌") |"
+          }
+
+          {
+            echo "## Tier 2 — Live Stack Results"
+            echo ""
+            echo "| Suite | Result |"
+            echo "|---|---|"
+            suite_result "Compose config validation"     compose-config.log
+            suite_result "Env var completeness"          env-completeness.log
+            suite_result "Nginx proxy domain regression" test.log
+            suite_result "Volume permission regression"  volume-permissions.log
+            suite_result "VPN namespace/connectivity"    vpn-namespace-connectivity.log
+            suite_result "Container health/reachability" container-health-reachability.log
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Fail if live suite failed
+        if: always()
+        run: |
+          [[ "${{ steps.live_suite.outcome }}" == "success" ]] || exit 1
