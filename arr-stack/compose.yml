@@ -36,8 +36,8 @@ services:
       - ./scripts/linux/qb-port-sync.sh:/usr/local/bin/qb-port-sync.sh:ro
     environment:
       - VPN_SERVICE_PROVIDER=private internet access
-      - OPENVPN_USER=${vpn_username}
-      - OPENVPN_PASSWORD=${vpn_password}
+      - OPENVPN_USER=${VPN_USERNAME}
+      - OPENVPN_PASSWORD=${VPN_PASSWORD}
       - SERVER_REGIONS=CA Toronto
       - TZ=${TZ:-America/Chicago}
       - VPN_PORT_FORWARDING=on
@@ -186,10 +186,10 @@ services:
       - TZ=${TZ:-America/Chicago}
     volumes:
       - radarr_data:/config
-      - ${movies}:/movies
-      - ${other_movies}:/other_movies
-      - ${kids_movies}:/kids_movies
-      - ${qbittorrent_downloads}:/downloads
+      - ${MOVIES}:/movies
+      - ${OTHER_MOVIES}:/other_movies
+      - ${KIDS_MOVIES}:/kids_movies
+      - ${QBITTORRENT_DOWNLOADS}:/downloads
     restart: always
     logging: *default-logging
     network_mode: "service:vpn"
@@ -212,10 +212,10 @@ services:
       - TZ=${TZ:-America/Chicago}
     volumes:
       - sonarr_data:/config
-      - ${tv_shows}:/tv_shows
-      - ${kids_tv_shows}:/kids_tv_shows
-      - ${other_shows}:/other_shows
-      - ${qbittorrent_downloads}:/downloads
+      - ${TV_SHOWS}:/tv_shows
+      - ${KIDS_TV_SHOWS}:/kids_tv_shows
+      - ${OTHER_SHOWS}:/other_shows
+      - ${QBITTORRENT_DOWNLOADS}:/downloads
     restart: always
     logging: *default-logging
     network_mode: "service:vpn"
@@ -238,10 +238,10 @@ services:
       - TZ=${TZ:-America/Chicago}
     volumes:
       - bazarr_data:/config
-      - ${movies}:/movies
-      - ${tv_shows}:/tv_shows
-      - ${kids_movies}:/kids_movies
-      - ${kids_tv_shows}:/kids_tv_shows
+      - ${MOVIES}:/movies
+      - ${TV_SHOWS}:/tv_shows
+      - ${KIDS_MOVIES}:/kids_movies
+      - ${KIDS_TV_SHOWS}:/kids_tv_shows
     restart: always
     logging: *default-logging
     network_mode: "service:vpn"
@@ -265,7 +265,7 @@ services:
       - WEBUI_PORT=8080
     volumes:
       - qbittorrent_data:/config
-      - ${qbittorrent_downloads}:/downloads
+      - ${QBITTORRENT_DOWNLOADS}:/downloads
     restart: always
     logging: *default-logging
     network_mode: "service:vpn"
