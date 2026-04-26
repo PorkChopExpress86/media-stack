@@ -28,8 +28,8 @@ The test service:
 - `Dockerfile.tests` — builds the lightweight test image
 - `nginx-proxy/compose.yml` — defines the `tests` service
 - `nginx-proxy/config/nginx-proxy-regression-baseline.json` — checked-in baseline of acceptable redirect targets
-- `scripts/linux/test-domains.sh` — main test runner
-- `scripts/linux/run-tests-scheduled.sh` — wrapper for scheduled runs
+- `scripts/linux/testing/test-domains.sh` — main test runner
+- `scripts/linux/testing/run-tests-scheduled.sh` — wrapper for scheduled runs
 - `test.log` — append-only execution log in the repository root
 
 ## How to run it
@@ -55,13 +55,13 @@ docker compose --project-directory "$PWD" --env-file nginx-proxy/.env -p nginx-p
 ### Run the scheduled wrapper manually
 
 ```bash
-bash scripts/linux/run-tests-scheduled.sh
+bash scripts/linux/testing/run-tests-scheduled.sh
 ```
 
 ### Example cron entry
 
 ```bash
-(crontab -l 2>/dev/null; echo "0 2 * * 0 /mnt/samsung/Docker/MediaServer/scripts/linux/run-tests-scheduled.sh") | crontab -
+(crontab -l 2>/dev/null; echo "0 2 * * 0 /mnt/samsung/Docker/MediaServer/scripts/linux/testing/run-tests-scheduled.sh") | crontab -
 ```
 
 ## Log format

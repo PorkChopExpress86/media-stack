@@ -1,5 +1,5 @@
 function Update-Compose {
-    Set-Location -Path "$PSScriptRoot/.."
+    Set-Location -Path "$PSScriptRoot/../.."
 
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
     $logFilePath = Join-Path -Path $PSScriptRoot -ChildPath "file.log"

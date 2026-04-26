@@ -1,1 +1,0 @@
-docker exec immich_postgres pg_dumpall --clean --if-exists --username=postgres | Out-File -FilePath "C:\Users\Blake\Docker\MediaServer\vol_bkup\immich-dump.sql" -Encoding utf8

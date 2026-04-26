@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # shellcheck source=media-stack-compose.sh
-source "${SCRIPT_DIR}/media-stack-compose.sh"
+source "${SCRIPT_DIR}/../helpers/media-stack-compose.sh"
 
 echo "==> Bringing all stacks down"
 while IFS= read -r stack; do

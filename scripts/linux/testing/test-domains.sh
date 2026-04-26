@@ -46,6 +46,7 @@ import json
 import os
 import sqlite3
 import sys
+import ipaddress
 
 db_path = os.environ["NPM_DB_PATH"]
 requested_domain = os.environ.get("TEST_DOMAIN", "").strip().lower()
@@ -53,32 +54,42 @@ requested_domain = os.environ.get("TEST_DOMAIN", "").strip().lower()
 conn = sqlite3.connect(db_path)
 cur = conn.cursor()
 cur.execute(
-    """
-    SELECT id, domain_names, ssl_forced, certificate_id, enabled
-    FROM proxy_host
-    WHERE is_deleted = 0 AND enabled = 1
-    ORDER BY id
-    """
+  """
+  SELECT id, domain_names, forward_host, ssl_forced, certificate_id
+  FROM proxy_host
+  WHERE is_deleted = 0 AND enabled = 1
+  ORDER BY id
+  """
 )
 
 rows = []
-for row_id, domain_names_raw, ssl_forced, certificate_id, enabled in cur.fetchall():
-    try:
-        domain_names = json.loads(domain_names_raw or "[]")
-    except json.JSONDecodeError:
-        continue
-    scheme = "https" if int(ssl_forced or 0) == 1 or int(certificate_id or 0) > 0 else "http"
-    for domain in domain_names:
-        domain = str(domain).strip()
-        if not domain:
-            continue
-        if requested_domain and domain.lower() != requested_domain:
-            continue
-        rows.append({"id": row_id, "domain": domain, "scheme": scheme})
+for row_id, domain_names_raw, forward_host, ssl_forced, certificate_id in cur.fetchall():
+  try:
+    domain_names = json.loads(domain_names_raw or "[]")
+  except json.JSONDecodeError:
+    continue
+
+  # Skip external raw-IP upstreams. This regression suite is focused on
+  # repo-managed proxy targets; raw IP backends are environment-specific and
+  # can flap independently of this repository.
+  try:
+    ipaddress.ip_address(str(forward_host).strip())
+    continue
+  except ValueError:
+    pass
+
+  scheme = "https" if int(ssl_forced or 0) == 1 or int(certificate_id or 0) > 0 else "http"
+  for domain in domain_names:
+    domain = str(domain).strip()
+    if not domain:
+      continue
+    if requested_domain and domain.lower() != requested_domain:
+      continue
+    rows.append({"id": row_id, "domain": domain, "scheme": scheme})
 
 if requested_domain and not rows:
-    print(json.dumps({"error": f"Requested domain not found among enabled proxy hosts: {requested_domain}"}))
-    sys.exit(3)
+  print(json.dumps({"error": f"Requested domain not found among enabled proxy hosts: {requested_domain}"}))
+  sys.exit(3)
 
 print(json.dumps(rows))
 PY

@@ -5,7 +5,7 @@ set -euo pipefail
 # Usage: sudo ./recreate_volumes_safely.sh
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 BACKUP_ROOT="${PROJECT_DIR}/vol_bkup/safety_recreate_$(date +"%Y%m%d_%H%M%S")"
 
 echo "========================================================"

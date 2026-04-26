@@ -6,7 +6,7 @@ Requires=docker.service
 [Service]
 Type=oneshot
 WorkingDirectory=/mnt/samsung/Docker/MediaServer
-ExecStart=/usr/bin/bash /mnt/samsung/Docker/MediaServer/scripts/linux/run-regression-tests.sh
+ExecStart=/usr/bin/bash /mnt/samsung/Docker/MediaServer/scripts/linux/testing/run-regression-tests.sh
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=media-stack-regression

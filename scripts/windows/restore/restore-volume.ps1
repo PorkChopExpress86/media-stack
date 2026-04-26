@@ -1,7 +1,7 @@
 <# Compatibility shim: use `restore-volumes.ps1` instead. #>
 
 param (
-    [string]$BackupDir = "$PSScriptRoot\..\vol_bkup",
+    [string]$BackupDir = "$PSScriptRoot\..\..\..\vol_bkup",
     [switch]$Force,
     [switch]$WhatIf
 )
@@ -61,7 +61,7 @@ foreach ($backup in $backups) {
     }
 
     # Forward to consolidated restore script
-    Write-Host "Delegating to scripts\restore-volumes.ps1 (use -WhatIf to preview)"
+    Write-Host "Delegating to scripts\windows\restore\restore-volumes.ps1 (use -WhatIf to preview)"
     & "$PSScriptRoot\restore-volumes.ps1" -BackupDir $BackupDir @($(if ($Force) {'-Force'})) @($(if ($WhatIf) {'-WhatIf'}))
     break
 }

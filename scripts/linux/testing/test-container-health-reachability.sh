@@ -3,11 +3,11 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 LOG_PATH="${CONTAINER_HEALTH_LOG_PATH:-${PROJECT_ROOT}/container-health-reachability.log}"
 
 # shellcheck source=media-stack-compose.sh
-source "${SCRIPT_DIR}/media-stack-compose.sh"
+source "${SCRIPT_DIR}/../helpers/media-stack-compose.sh"
 
 timestamp() {
   date '+%Y-%m-%d %H:%M:%S'
@@ -61,6 +61,11 @@ check_container_state() {
 
   log_line "[$(timestamp)] PASS stack=${stack} service=${service} container=${name} check=running state=running"
 
+  if [[ "$health_status" == "starting" ]]; then
+    log_line "[$(timestamp)] INFO stack=${stack} service=${service} container=${name} check=health status=starting action=waiting-for-settle"
+    health_status="$(wait_for_container_health "$name")"
+  fi
+
   case "$health_status" in
     healthy)
       log_line "[$(timestamp)] PASS stack=${stack} service=${service} container=${name} check=health status=healthy"
@@ -73,6 +78,34 @@ check_container_state() {
       return 1
       ;;
   esac
+}
+
+wait_for_container_health() {
+  local container_name="$1"
+  local attempt=0
+  local status=""
+
+  while [[ $attempt -lt 6 ]]; do
+    status="$(docker inspect "$container_name" --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' 2>/dev/null || echo missing)"
+    case "$status" in
+      healthy|""|none)
+        printf '%s\n' "$status"
+        return 0
+        ;;
+      starting)
+        attempt=$((attempt + 1))
+        if [[ $attempt -lt 6 ]]; then
+          sleep 10
+        fi
+        ;;
+      *)
+        printf '%s\n' "$status"
+        return 0
+        ;;
+    esac
+  done
+
+  printf '%s\n' "$status"
 }
 
 check_http_endpoint() {

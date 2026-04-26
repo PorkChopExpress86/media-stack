@@ -32,11 +32,11 @@ Tier 1 static checks are expected to be reproducible from the repository checkou
    - Installs `yamllint`.
    - Lints every `compose.yml` and `compose.yaml` except paths under `./scheduler/*`.
 2. `Compose config validation`
-   - Runs `bash scripts/linux/test-compose-config.sh`.
+   - Runs `bash scripts/linux/testing/test-compose-config.sh`.
 3. `Env var completeness check`
-   - Runs `bash scripts/linux/test-env-completeness.sh`.
+   - Runs `bash scripts/linux/testing/test-env-completeness.sh`.
 4. `Tracked secret scan`
-   - Runs `bash scripts/linux/test-secret-scan.sh`.
+   - Runs `bash scripts/linux/testing/test-secret-scan.sh`.
 
 All checks use `continue-on-error: true`, write a summary, then the final step fails if any check failed. Always inspect the failed step output, not only the final failure step.
 
@@ -51,7 +51,7 @@ Tier 2 live tests run on the self-hosted runner from:
 The live job runs:
 
 ```bash
-bash scripts/linux/run-regression-tests.sh
+bash scripts/linux/testing/run-regression-tests.sh
 ```
 
 The job summary reads these logs from the live checkout:
@@ -89,7 +89,7 @@ Tier 2 failures may involve live Docker state, local `.env` files, Nginx Proxy M
    - Preserve the modular stack layout and existing service, volume, and env names.
 6. Verify the fix.
    - Re-run the failed check.
-   - If the change touches shared stack behavior, run `bash scripts/linux/run-regression-tests.sh` when the live environment is available.
+   - If the change touches shared stack behavior, run `bash scripts/linux/testing/run-regression-tests.sh` when the live environment is available.
 
 ## Repository-specific rules
 
@@ -102,7 +102,7 @@ Tier 2 failures may involve live Docker state, local `.env` files, Nginx Proxy M
   - `nginx-proxy/compose.yml`
   - `proxied-apps/compose.yml`
   - `scheduler/compose.yaml`
-- `scripts/linux/media-stack-compose.sh` is the source of truth for stack enumeration and stack-aware compose commands.
+- `scripts/linux/helpers/media-stack-compose.sh` is the source of truth for stack enumeration and stack-aware compose commands.
 - Use `--project-directory /mnt/samsung/Docker/MediaServer` or the repo helper scripts when validating nested compose files.
 - Preserve `network_mode: service:vpn` for the arr stack unless the user explicitly asks for a topology change.
 - Do not add secrets to compose files. When secrets are involved, point to local config paths rather than echoing values.
@@ -114,10 +114,10 @@ Tier 2 failures may involve live Docker state, local `.env` files, Nginx Proxy M
 Use these starting points after collecting the exact failure output:
 
 - YAML lint failures: fix syntax, indentation, or accidental generated-file inclusion in the reported compose file.
-- Compose config failures: run `bash scripts/linux/test-compose-config.sh`; check stack-local env files, `extends.file` paths, external networks, and root-relative bind paths.
+- Compose config failures: run `bash scripts/linux/testing/test-compose-config.sh`; check stack-local env files, `extends.file` paths, external networks, and root-relative bind paths.
 - Env completeness failures: compare each stack `.env.example` with its compose variable usage and avoid committing real `.env` values.
 - Secret scan failures: remove tracked secrets and replace them with env/config placeholders.
-- Orphan detection failures: inspect modular project names through `scripts/linux/media-stack-compose.sh`.
+- Orphan detection failures: inspect modular project names through `scripts/linux/helpers/media-stack-compose.sh`.
 - Proxy regression failures: compare direct service reachability with NPM upstream targets and generated nginx config.
 - Volume permission failures: distinguish regular files/directories from Unix sockets; sockets are validated by presence plus service-level behavior.
 - VPN namespace failures: check the `vpn` container first, then services sharing `network_mode: service:vpn`.

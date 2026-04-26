@@ -6,12 +6,12 @@ Usage:
   .\restore-volumes.ps1                     # restore all volumes
   .\restore-volumes.ps1 -WhatIf             # preview only
   .\restore-volumes.ps1 -Force              # clear existing data before restore
-  .\restore-volumes.ps1 -BackupDir "D:\backups"
+    .\restore-volumes.ps1 -BackupDir "D:\backups"
   .\restore-volumes.ps1 -SelectiveRestore @('nginx_data', 'radarr_data')
 #>
 
 param (
-    [string]$BackupDir = "$PSScriptRoot\..\vol_bkup",
+        [string]$BackupDir = "$PSScriptRoot\..\..\..\vol_bkup",
     [switch]$Force,
     [switch]$WhatIf,
     [string[]]$SelectiveRestore = @(),

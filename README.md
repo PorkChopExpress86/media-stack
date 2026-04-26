@@ -59,7 +59,7 @@ A comprehensive Docker Compose setup for a home media server with automated back
 git clone https://github.com/PorkChopExpress86/media-stack.git
 cd media-stack
 # Copy the stack .env.example files you need, then edit them in place.
-bash scripts/linux/update-compose.sh
+bash scripts/linux/maintenance/update-compose.sh
 ```
 
 **Access:** Nginx Proxy Manager (`http://localhost:81`, default: `admin@example.com`/`changeme`), Jellyfin (8096), Immich (2283), *arr services via VPN ports
@@ -105,9 +105,9 @@ Use these naming rules for consistency across `.env`, compose files, scripts, an
 - **Named volume keys (Compose):** use `lower_snake_case` and prefer `_data` suffix for persistent app data.
 	- Examples: `prowlarr_data`, `qbittorrent_data`, `immich_server_data`
 	- Keep existing legacy names as-is (for example `model-cache`) unless doing a planned migration.
-- **Script filenames:** use `kebab-case` for operational scripts in `scripts/linux/`.
-	- Examples: `backup-all.sh`, `restore-volumes.sh`, `qb-port-sync.sh`
-- **Documentation filenames in `scripts/`:** use `kebab-case` for project-maintained guides.
+- **Script filenames:** use `kebab-case` for operational scripts in `scripts/linux/<task>/`.
+	- Examples: `backup/backup-all.sh`, `restore/restore-volumes.sh`, `arr/qb-port-sync.sh`
+- **Documentation filenames:** use `kebab-case` for project-maintained guides in `docs/operations/`.
 	- Examples: `immich-backup-guide.md`, `restore-guide.md`
 - **Backup set directories:** use date-plus-sequence format `YYYYMMDD-NNN`.
 	- Example: `20260419-001`
@@ -123,10 +123,10 @@ RADARR_API_KEY=xxxxxxxxxxxxxxxx
 WATCHTOWER_NOTIFICATION_EMAIL_SERVER=smtp.gmail.com
 
 # files
-scripts/linux/qb-port-sync.sh
-scripts/linux/backup-all.sh
-scripts/immich-backup-guide.md
-scripts/restore-guide.md
+scripts/linux/arr/qb-port-sync.sh
+scripts/linux/backup/backup-all.sh
+docs/operations/immich-backup-guide.md
+docs/operations/restore-guide.md
 vol_bkup/20260419-001/
 ```
 
@@ -208,40 +208,21 @@ Kometa:
 - Usually run manually or on a schedule after `config.yml` is created.
 - Should not be exposed publicly.
 
-## 🗂️ Project Layout
-
-This repository is organized by function so day-to-day operations are easier to navigate:
-
-- `nginx-proxy/compose.yml` — Nginx Proxy Manager and proxy regression test container.
-- `jellyfin/compose.yml` — Jellyfin as its own proxied media stack.
-- `arr-stack/compose.yml` — Gluetun, qBittorrent, *arr apps, FlareSolverr, Decluttarr, qBittorrent metrics.
-- `immich/compose.yml` — Immich server, machine learning, Redis, Postgres.
-- `immich/config/` — Immich hardware acceleration snippets for ML and transcoding.
-- `lan-apps/compose.yml` — direct/LAN apps: Pinchflat, Plex, Jellyseerr, Kometa, Home Assistant.
-- `proxied-apps/compose.yml` — other standalone apps reached by NPM: Audiobookshelf, DerbyNet, Minecraft.
-- `monitoring/compose.yml` — Prometheus, Grafana, cAdvisor, node-exporter, and Scrutiny.
-- `.env` / `.env.example` — local host secrets and shared environment settings.
-- `scripts/linux/` — operational Linux scripts (backup, restore, update, maintenance).
-- `scripts/windows/` — PowerShell equivalents for Windows-based operations.
-- `scripts/` — shared helper scripts and operational guides.
-- `docs/` — project documentation for operational workflows and feature-specific guides.
-- `monitoring/config/` — Prometheus and Grafana provisioning/dashboards.
-- `nginx-proxy/config/` — Nginx proxy regression baseline.
-- `config/` — shared static snippets that are not owned by a migrated stack yet.
 - `data/` — bind-mounted application data directories.
 - `vol_bkup/` — date-stamped backup sets (`YYYYMMDD-NNN`).
 
 Organization conventions:
 
-- New automation scripts should go in `scripts/linux/` or `scripts/windows/`.
-- New operations documentation should live in `scripts/` and follow naming standards.
+- New automation scripts should go in the appropriate `scripts/linux/<task>/` or `scripts/windows/<task>/` folder.
+- Shared Linux shell helpers belong in `scripts/linux/helpers/`.
+- New operations documentation should live in `docs/operations/` and follow naming standards.
 - Keep service-specific static config next to the owning stack, for example `monitoring/config/`.
 
 ## 💾 Backup & Restore
 
 ### Automated Weekly Backup
 
-A cron job runs `scripts/linux/backup-all.sh` every Sunday at 3:00 AM. It backs up:
+A cron job runs `scripts/linux/backup/backup-all.sh` every Sunday at 3:00 AM. It backs up:
 - All named Docker volumes (config data for every service)
 - Bind-mounted data (DerbyNet, Actual Budget, Minecraft worlds)
 - Immich Postgres database (via `pg_dumpall`)
@@ -256,13 +237,13 @@ Compression and duration tuning:
 
 ```bash
 # Set up the cron job (run once)
-(crontab -l 2>/dev/null; echo "0 3 * * 0 /mnt/samsung/Docker/MediaServer/scripts/linux/backup-all.sh >> /mnt/samsung/Docker/MediaServer/vol_bkup/backup.log 2>&1") | crontab -
+(crontab -l 2>/dev/null; echo "0 3 * * 0 /mnt/samsung/Docker/MediaServer/scripts/linux/backup/backup-all.sh >> /mnt/samsung/Docker/MediaServer/vol_bkup/backup.log 2>&1") | crontab -
 
 # Run a manual backup
-bash scripts/linux/backup-all.sh
+bash scripts/linux/backup/backup-all.sh
 
 # Restore volumes from a backup
-bash scripts/linux/restore-volumes.sh
+bash scripts/linux/restore/restore-volumes.sh
 ```
 
 > **Note:** Immich photo/video uploads (`UPLOAD_LOCATION`) are excluded from automated backup due to size. Back those up separately with rsync or your preferred tool.
@@ -275,7 +256,7 @@ Windows PowerShell scripts are available in `scripts/windows/` for environments 
 
 ```bash
 # Update containers manually
-bash scripts/linux/update-compose.sh
+bash scripts/linux/maintenance/update-compose.sh
 
 # Or use individual docker compose commands
 docker compose pull && docker compose up -d
@@ -290,7 +271,7 @@ Each stack owns its own `compose.yml` and ignored `.env` file. The helper script
 To update or start everything in one pass, use:
 
 ```bash
-bash scripts/linux/update-compose.sh
+bash scripts/linux/maintenance/update-compose.sh
 ```
 
 To operate on one stack directly, run Compose from that stack directory:
@@ -307,13 +288,13 @@ Stacks that need reverse proxy access share the `media_proxy` network.
 A single script runs all regression checks in sequence and reports a combined pass/fail result.
 
 ```bash
-bash scripts/linux/run-regression-tests.sh
+bash scripts/linux/testing/run-regression-tests.sh
 ```
 
 To automate weekly runs, install the bundled systemd timer (runs every Sunday at 02:00):
 
 ```bash
-sudo bash scripts/linux/install-regression-timer.sh
+sudo bash scripts/linux/maintenance/install-regression-timer.sh
 ```
 
 Check the timer status:
@@ -326,7 +307,7 @@ journalctl -u media-stack-regression.service --no-pager -n 50
 Remove the timer:
 
 ```bash
-sudo bash scripts/linux/install-regression-timer.sh uninstall
+sudo bash scripts/linux/maintenance/install-regression-timer.sh uninstall
 ```
 
 Unit files live in `scripts/linux/systemd/`. Both individual suites can still be run independently — see the sections below.
@@ -360,7 +341,7 @@ docker compose run --rm -T -e TEST_DOMAIN=jellyfin.ohmygoshwhatever.com tests
 Run the scheduled wrapper manually:
 
 ```bash
-bash scripts/linux/run-tests-scheduled.sh
+bash scripts/linux/testing/run-tests-scheduled.sh
 ```
 
 `test.log` is ignored by git via the existing `*.log` rule in `.gitignore`.
@@ -384,7 +365,7 @@ What it checks:
 Run it manually:
 
 ```bash
-bash scripts/linux/test-volume-permissions.sh
+bash scripts/linux/testing/test-volume-permissions.sh
 ```
 
 Watchtower checks for image updates every 6 hours and sends email notifications.

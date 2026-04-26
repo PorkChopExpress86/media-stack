@@ -157,15 +157,15 @@ git commit -m "chore: remove watchtower env vars from .env.example files"
 ### Task 4: Remove watchtower from backup/restore/recreate scripts
 
 **Files:**
-- Modify: `scripts/linux/backup-volumes.sh` — remove the `backup_volume media-stack_watchtower_data` line and its comment
-- Modify: `scripts/linux/restore-volumes.sh` — remove the `restore_volume media-stack_watchtower_data` line
-- Modify: `scripts/recreate_volumes_safely.sh` — remove `"media-stack_watchtower_data"` from the array
+- Modify: `scripts/linux/backup/backup-volumes.sh` — remove the `backup_volume media-stack_watchtower_data` line and its comment
+- Modify: `scripts/linux/restore/restore-volumes.sh` — remove the `restore_volume media-stack_watchtower_data` line
+- Modify: `scripts/linux/maintenance/recreate_volumes_safely.sh` — remove `"media-stack_watchtower_data"` from the array
 
 Watchtower has no declared volume in `monitoring/compose.yml` and `docker volume ls` confirms `media-stack_watchtower_data` does not exist on the host. These are dead references.
 
 - [ ] **Step 1: Remove from backup-volumes.sh**
 
-In `scripts/linux/backup-volumes.sh`, delete:
+In `scripts/linux/backup/backup-volumes.sh`, delete:
 ```bash
 # Watchtower
 backup_volume media-stack_watchtower_data   /data            media-stack_watchtower_data.tar.gz
@@ -173,14 +173,14 @@ backup_volume media-stack_watchtower_data   /data            media-stack_watchto
 
 - [ ] **Step 2: Remove from restore-volumes.sh**
 
-In `scripts/linux/restore-volumes.sh`, delete:
+In `scripts/linux/restore/restore-volumes.sh`, delete:
 ```bash
 restore_volume media-stack_watchtower_data   /data            watchtower_data.tar.gz
 ```
 
 - [ ] **Step 3: Remove from recreate_volumes_safely.sh**
 
-In `scripts/recreate_volumes_safely.sh`, delete:
+In `scripts/linux/maintenance/recreate_volumes_safely.sh`, delete:
 ```
     "media-stack_watchtower_data"
 ```
@@ -195,7 +195,7 @@ Expected: no output.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add scripts/linux/backup-volumes.sh scripts/linux/restore-volumes.sh scripts/recreate_volumes_safely.sh
+git add scripts/linux/backup/backup-volumes.sh scripts/linux/restore/restore-volumes.sh scripts/linux/maintenance/recreate_volumes_safely.sh
 git commit -m "chore: remove dead watchtower volume references from backup/restore scripts"
 ```
 

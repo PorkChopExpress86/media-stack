@@ -3,11 +3,11 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 LOG_PATH="${VPN_NAMESPACE_LOG_PATH:-${PROJECT_ROOT}/vpn-namespace-connectivity.log}"
 
 # shellcheck source=media-stack-compose.sh
-source "${SCRIPT_DIR}/media-stack-compose.sh"
+source "${SCRIPT_DIR}/../helpers/media-stack-compose.sh"
 
 timestamp() {
   date '+%Y-%m-%d %H:%M:%S'

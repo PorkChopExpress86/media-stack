@@ -34,7 +34,8 @@ NC='\033[0m' # No Color
 
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-COMPOSE_DIR="$(dirname "$SCRIPT_DIR")"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
+COMPOSE_DIR="${IMMICH_COMPOSE_DIR:-${PROJECT_ROOT}/immich}"
 ENV_FILE="$COMPOSE_DIR/.env"
 
 # Load environment variables from .env

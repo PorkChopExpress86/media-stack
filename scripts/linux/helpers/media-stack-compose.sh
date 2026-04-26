@@ -3,8 +3,8 @@
 # Shared Compose helpers for the modular stack files.
 # Each stack owns its own compose file, project name, and env file.
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+MEDIA_STACK_HELPER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+MEDIA_STACK_REPO_ROOT="$(cd "${MEDIA_STACK_HELPER_DIR}/../../.." && pwd)"
 
 MODULAR_STACK_NAMES=(
   jellyfin
@@ -28,13 +28,13 @@ normalize_stack_name() {
 
 compose_file_for_stack() {
   case "$(normalize_stack_name "$1")" in
-    nginx-proxy) printf '%s\n' "${PROJECT_ROOT}/nginx-proxy/compose.yml" ;;
-    jellyfin) printf '%s\n' "${PROJECT_ROOT}/jellyfin/compose.yml" ;;
-    arr-stack) printf '%s\n' "${PROJECT_ROOT}/arr-stack/compose.yml" ;;
-    immich) printf '%s\n' "${PROJECT_ROOT}/immich/compose.yml" ;;
-    lan-apps) printf '%s\n' "${PROJECT_ROOT}/lan-apps/compose.yml" ;;
-    proxied-apps) printf '%s\n' "${PROJECT_ROOT}/proxied-apps/compose.yml" ;;
-    monitoring) printf '%s\n' "${PROJECT_ROOT}/monitoring/compose.yml" ;;
+    nginx-proxy) printf '%s\n' "${MEDIA_STACK_REPO_ROOT}/nginx-proxy/compose.yml" ;;
+    jellyfin) printf '%s\n' "${MEDIA_STACK_REPO_ROOT}/jellyfin/compose.yml" ;;
+    arr-stack) printf '%s\n' "${MEDIA_STACK_REPO_ROOT}/arr-stack/compose.yml" ;;
+    immich) printf '%s\n' "${MEDIA_STACK_REPO_ROOT}/immich/compose.yml" ;;
+    lan-apps) printf '%s\n' "${MEDIA_STACK_REPO_ROOT}/lan-apps/compose.yml" ;;
+    proxied-apps) printf '%s\n' "${MEDIA_STACK_REPO_ROOT}/proxied-apps/compose.yml" ;;
+    monitoring) printf '%s\n' "${MEDIA_STACK_REPO_ROOT}/monitoring/compose.yml" ;;
     *) return 1 ;;
   esac
 }
@@ -58,7 +58,7 @@ compose_project_for_stack() {
 compose_env_file_for_stack() {
   local stack="$1"
 
-  local stack_env="${PROJECT_ROOT}/${stack}/.env"
+  local stack_env="${MEDIA_STACK_REPO_ROOT}/${stack}/.env"
   if [[ -f "$stack_env" ]]; then
     printf '%s\n' "$stack_env"
     return 0
@@ -86,7 +86,7 @@ compose_cmd_for_stack() {
   compose_file="$(compose_file_for_stack "$stack")" || return 1
   env_file="$(compose_env_file_for_stack "$stack")"
 
-  (cd "$PROJECT_ROOT" && docker compose --project-directory "$PROJECT_ROOT" --env-file "$env_file" -p "$project" -f "$compose_file" "$@")
+  (cd "$MEDIA_STACK_REPO_ROOT" && docker compose --project-directory "$MEDIA_STACK_REPO_ROOT" --env-file "$env_file" -p "$project" -f "$compose_file" "$@")
 }
 
 compose_ps_ids() {

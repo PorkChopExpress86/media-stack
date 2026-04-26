@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Start / update all stacks
 ```bash
-bash scripts/linux/update-compose.sh
+bash scripts/linux/maintenance/update-compose.sh
 ```
 
 ### Operate on a single stack
@@ -19,7 +19,7 @@ docker compose restart [service]
 
 ### Run full regression suite
 ```bash
-bash scripts/linux/run-regression-tests.sh
+bash scripts/linux/testing/run-regression-tests.sh
 ```
 
 Runs six suites in order:
@@ -36,8 +36,8 @@ Each suite writes a log to the project root (e.g. `compose-config.log`, `env-com
 
 ### Run Tier 1 static checks only (no containers required)
 ```bash
-bash scripts/linux/test-compose-config.sh
-bash scripts/linux/test-env-completeness.sh
+bash scripts/linux/testing/test-compose-config.sh
+bash scripts/linux/testing/test-env-completeness.sh
 ```
 
 ### Run nginx proxy regression tests standalone
@@ -52,12 +52,12 @@ docker compose -f nginx-proxy/compose.yml run --rm -T -e TEST_DOMAIN=jellyfin.ex
 
 ### Run a manual backup
 ```bash
-bash scripts/linux/backup-all.sh
+bash scripts/linux/backup/backup-all.sh
 ```
 
 ### Check volume permissions
 ```bash
-bash scripts/linux/test-volume-permissions.sh
+bash scripts/linux/testing/test-volume-permissions.sh
 ```
 
 ## Architecture
@@ -75,7 +75,7 @@ The project is split into seven independent stacks, each with its own `compose.y
 | `proxied-apps/` | Audiobookshelf, DerbyNet, Minecraft (Survival + Creative) |
 | `monitoring/` | Prometheus, Grafana, cAdvisor, node-exporter, Watchtower |
 
-All stacks are enumerated in `scripts/linux/media-stack-compose.sh` (`MODULAR_STACK_NAMES`). That library provides `compose_cmd_for_stack`, `active_stack_names`, and helpers used by every operational script — import it with `source "${SCRIPT_DIR}/media-stack-compose.sh"` rather than rewriting the lookup logic.
+All stacks are enumerated in `scripts/linux/helpers/media-stack-compose.sh` (`MODULAR_STACK_NAMES`). That library provides `compose_cmd_for_stack`, `active_stack_names`, and helpers used by every operational script — import it with `source "${SCRIPT_DIR}/../helpers/media-stack-compose.sh"` rather than rewriting the lookup logic.
 
 ### Networking
 - `media_proxy` is a pre-existing external Docker network. Every stack that needs NPM reverse-proxy access must join it.
@@ -92,7 +92,7 @@ All named volumes are declared `external: true` and carry the `media-stack_` pre
 
 ### Test suite
 
-The full regression suite is run by `scripts/linux/run-regression-tests.sh` and is also executed daily at 03:00 UTC via GitHub Actions (`.github/workflows/ci.yml`).
+The full regression suite is run by `scripts/linux/testing/run-regression-tests.sh` and is also executed daily at 03:00 UTC via GitHub Actions (`.github/workflows/ci.yml`).
 
 **Tier 1 — Static (no containers required):**
 - `test-compose-config.sh` — validates all `compose.yml` files parse correctly using `docker compose config --no-interpolate`
@@ -107,7 +107,7 @@ The full regression suite is run by `scripts/linux/run-regression-tests.sh` and 
 **CI:** Tier 1 runs on `ubuntu-latest` (GitHub-hosted). Tier 2 runs on the `self-hosted` runner at `/mnt/samsung/Docker/MediaServer` where live `.env` files and containers are present. Scheduled runs fire against `main`; the schedule does not activate on feature branches until merged.
 
 ### Backup system
-`scripts/linux/backup-all.sh` (runs weekly via cron, Sundays 03:00) backs up all named Docker volumes and bind-mounted app data as `.tar.gz` archives under `vol_bkup/YYYYMMDD-NNN/`. Retains the three most recent sets. Immich Postgres is dumped via `pg_dumpall`. Immich photo/video uploads are excluded due to size. Compression is tunable via `BACKUP_GZIP_LEVEL` and `BACKUP_COMPRESSOR` in root `.env`.
+`scripts/linux/backup/backup-all.sh` (runs weekly via cron, Sundays 03:00) backs up all named Docker volumes and bind-mounted app data as `.tar.gz` archives under `vol_bkup/YYYYMMDD-NNN/`. Retains the three most recent sets. Immich Postgres is dumped via `pg_dumpall`. Immich photo/video uploads are excluded due to size. Compression is tunable via `BACKUP_GZIP_LEVEL` and `BACKUP_COMPRESSOR` in root `.env`.
 
 ## Naming Conventions
 
@@ -116,5 +116,5 @@ The full regression suite is run by `scripts/linux/run-regression-tests.sh` and 
 | All `.env` variables | `UPPER_SNAKE_CASE` | `QBITTORRENT_DOWNLOADS` |
 | Service names / `container_name` | `kebab-case` | `minecraft-survival` |
 | Named volume keys | `lower_snake_case` + `_data` suffix | `prowlarr_data` |
-| Scripts in `scripts/linux/` | `kebab-case` | `backup-all.sh` |
+| Scripts in `scripts/linux/<task>/` | `kebab-case` | `backup/backup-all.sh` |
 | Backup set directories | `YYYYMMDD-NNN` | `20260419-001` |

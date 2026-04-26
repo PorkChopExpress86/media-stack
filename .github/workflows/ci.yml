@@ -36,17 +36,17 @@ jobs:
 
       - name: Compose config validation
         id: compose_config
-        run: bash scripts/linux/test-compose-config.sh
+        run: bash scripts/linux/testing/test-compose-config.sh
         continue-on-error: true
 
       - name: Env var completeness check
         id: env_completeness
-        run: bash scripts/linux/test-env-completeness.sh
+        run: bash scripts/linux/testing/test-env-completeness.sh
         continue-on-error: true
 
       - name: Tracked secret scan
         id: secret_scan
-        run: bash scripts/linux/test-secret-scan.sh
+        run: bash scripts/linux/testing/test-secret-scan.sh
         continue-on-error: true
 
       - name: Write job summary
@@ -89,7 +89,7 @@ jobs:
         # not present in the CI checkout. The self-hosted runner has the full
         # stack at /mnt/samsung/Docker/MediaServer.
         working-directory: /mnt/samsung/Docker/MediaServer
-        run: bash scripts/linux/run-regression-tests.sh
+        run: bash scripts/linux/testing/run-regression-tests.sh
         continue-on-error: true
 
       - name: Write job summary

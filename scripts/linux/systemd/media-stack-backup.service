@@ -6,7 +6,7 @@ Requires=docker.service
 [Service]
 Type=oneshot
 WorkingDirectory=/mnt/samsung/Docker/MediaServer
-ExecStart=/usr/bin/bash /mnt/samsung/Docker/MediaServer/scripts/linux/backup-all.sh
+ExecStart=/usr/bin/bash /mnt/samsung/Docker/MediaServer/scripts/linux/backup/backup-all.sh
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=media-stack-backup

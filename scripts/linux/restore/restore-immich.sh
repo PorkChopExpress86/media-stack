@@ -25,7 +25,9 @@ CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Configuration (modify these to match your setup)
-IMMICH_COMPOSE_DIR="${IMMICH_COMPOSE_DIR:-/opt/immich}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
+IMMICH_COMPOSE_DIR="${IMMICH_COMPOSE_DIR:-${PROJECT_ROOT}/immich}"
 DB_CONTAINER="immich_postgres"
 DB_USERNAME="${DB_USERNAME:-postgres}"
 UPLOAD_LOCATION="${UPLOAD_LOCATION:-/mnt/immich/upload}"

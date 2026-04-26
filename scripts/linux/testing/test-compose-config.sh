@@ -9,11 +9,11 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 LOG_PATH="${COMPOSE_CONFIG_LOG_PATH:-${PROJECT_ROOT}/compose-config.log}"
 
 # shellcheck source=media-stack-compose.sh
-source "${SCRIPT_DIR}/media-stack-compose.sh"
+source "${SCRIPT_DIR}/../helpers/media-stack-compose.sh"
 
 timestamp() { date '+%Y-%m-%d %H:%M:%S'; }
 

@@ -9,7 +9,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-UNIT_DIR="${SCRIPT_DIR}/systemd"
+UNIT_DIR="${SCRIPT_DIR}/../systemd"
 SYSTEMD_DIR="/etc/systemd/system"
 SERVICE="media-stack-regression.service"
 TIMER="media-stack-regression.timer"

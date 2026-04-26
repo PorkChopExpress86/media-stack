@@ -4,8 +4,8 @@ RUN apk add --no-cache bash curl
 
 WORKDIR /workspace
 
-COPY scripts/linux/test-domains.sh /usr/local/bin/test-domains.sh
-COPY scripts/linux/run-tests-scheduled.sh /usr/local/bin/run-tests-scheduled.sh
+COPY scripts/linux/testing/test-domains.sh /usr/local/bin/test-domains.sh
+COPY scripts/linux/testing/run-tests-scheduled.sh /usr/local/bin/run-tests-scheduled.sh
 
 RUN chmod +x /usr/local/bin/test-domains.sh /usr/local/bin/run-tests-scheduled.sh
 

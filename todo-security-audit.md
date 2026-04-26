@@ -14,7 +14,7 @@ _Audited: 2026-04-22 | Re-reviewed: 2026-04-23 against modular compose stacks_
     - Added `healthcheck` on `http://localhost:8123` — Docker auto-restarts on failure, keeping locks/lights responsive
     - Added explanatory comment in compose file documenting why host mode is required
   - **Remaining risk**: Container still runs as root. HA does not support `PUID/PGID` env vars. This is a known upstream limitation — see https://github.com/home-assistant/core/issues for non-root progress.
-  - **UFW**: `scripts/fix_homekit_firewall.sh` already opens ports 21064/tcp and 5353/udp. Verify these rules survive reboots with `sudo ufw status numbered`.
+  - **UFW**: `scripts/linux/homeassistant/fix_homekit_firewall.sh` already opens ports 21064/tcp and 5353/udp. Verify these rules survive reboots with `sudo ufw status numbered`.
 
 - [x] **`derbynet`, `actual_server`, `audiobookshelf`, `pinchflat` — running as root**
   - All services now have `user: "1000:1000"` in their respective modular compose files (`proxied-apps/compose.yml`, `lan-apps/compose.yml`). Validated 2026-04-23.

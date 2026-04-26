@@ -8,7 +8,7 @@ set -euo pipefail
 #   Otherwise, prompts to choose from available backups or uses latest
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 BACKUP_ROOT="${PROJECT_DIR}/vol_bkup"
 
 # Function to list available backups

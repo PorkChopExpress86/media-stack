@@ -16,7 +16,7 @@ set -euo pipefail
 # =============================================================================
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 ARR_STACK_DIR="$PROJECT_DIR/arr-stack"
 MOUNT_POINT="/mnt/wd_hdd_1tb"
 QBT_SUBDIR="qbittorrent"
