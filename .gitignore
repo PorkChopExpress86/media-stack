@@ -41,3 +41,7 @@ survival_data/
 __pycache__/
 *.pyc
 .pytest_cache/
+
+# Local inventory/list dumps
+stash_list.txt
+usb_list.txt
