@@ -76,12 +76,33 @@ compose_file_args_for_stack() {
   printf '%s\n%s\n' "-f" "$compose_file"
 }
 
+validate_stack_pre_start() {
+  local stack="$1"
+  local cmd="${2:-}"
+
+  # Only validate for commands that start or restart containers
+  [[ "$cmd" =~ ^(up|start|restart)$ ]] || return 0
+
+  case "$stack" in
+    arr-stack)
+      local check_script="${MEDIA_STACK_REPO_ROOT}/scripts/linux/arr/check-qbt-mount.sh"
+      if [[ -x "$check_script" ]]; then
+        "$check_script" || return 1
+      fi
+      ;;
+  esac
+}
+
 compose_cmd_for_stack() {
   local stack="$1"
   shift
 
   local project compose_file env_file
   stack="$(normalize_stack_name "$stack")"
+
+  # Validate stack-specific requirements (e.g., mount points) before starting
+  validate_stack_pre_start "$stack" "${1:-}" || return 1
+
   project="$(compose_project_for_stack "$stack")"
   compose_file="$(compose_file_for_stack "$stack")" || return 1
   env_file="$(compose_env_file_for_stack "$stack")"

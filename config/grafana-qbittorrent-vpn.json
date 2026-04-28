@@ -1,0 +1,143 @@
+{
+  "uid": "qbittorrent-vpn",
+  "title": "qBittorrent & VPN",
+  "tags": ["qbittorrent", "vpn", "gluetun", "media-stack"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "editable": true,
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "qBittorrent download speed",
+      "gridPos": {"x": 0, "y": 0, "w": 12, "h": 8},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps",
+          "custom": {"drawStyle": "line", "lineInterpolation": "linear", "lineWidth": 2, "fillOpacity": 10, "showPoints": "never"}
+        },
+        "overrides": []
+      },
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "single"}},
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "qbittorrent_download_speed_bytes_per_second",
+          "legendFormat": "download"
+        },
+        {
+          "refId": "B",
+          "expr": "qbittorrent_upload_speed_bytes_per_second",
+          "legendFormat": "upload"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "VPN health",
+      "gridPos": {"x": 12, "y": 0, "w": 6, "h": 4},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "max": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "red", "value": 0},
+              {"color": "green", "value": 1}
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "gluetun_health",
+          "legendFormat": "vpn"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Torrent queue states",
+      "gridPos": {"x": 0, "y": 8, "w": 18, "h": 8},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {"drawStyle": "line", "lineInterpolation": "linear", "lineWidth": 2, "fillOpacity": 10, "showPoints": "never"}
+        },
+        "overrides": []
+      },
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "single"}},
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "qbittorrent_torrents_state{state=~\"downloading|queuedDL|stalledDL|metaDL|pausedDL\"}",
+          "legendFormat": "{{state}}"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Torrent totals",
+      "gridPos": {"x": 18, "y": 8, "w": 6, "h": 8},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {"drawStyle": "line", "lineInterpolation": "linear", "lineWidth": 2, "fillOpacity": 10, "showPoints": "never"}
+        },
+        "overrides": []
+      },
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "single"}},
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "qbittorrent_torrents_total",
+          "legendFormat": "total"
+        },
+        {
+          "refId": "B",
+          "expr": "qbittorrent_torrents_incomplete",
+          "legendFormat": "incomplete"
+        },
+        {
+          "refId": "C",
+          "expr": "qbittorrent_torrents_active_downloads",
+          "legendFormat": "active downloads"
+        },
+        {
+          "refId": "D",
+          "expr": "qbittorrent_torrents_queued_downloads",
+          "legendFormat": "queued"
+        },
+        {
+          "refId": "E",
+          "expr": "qbittorrent_torrents_stalled_downloads",
+          "legendFormat": "stalled"
+        }
+      ]
+    }
+  ]
+}

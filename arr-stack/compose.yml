@@ -189,7 +189,11 @@ services:
       - ${MOVIES}:/movies
       - ${OTHER_MOVIES}:/other_movies
       - ${KIDS_MOVIES}:/kids_movies
-      - ${QBITTORRENT_DOWNLOADS}:/downloads
+      - type: bind
+        source: ${QBITTORRENT_DOWNLOADS}
+        target: /downloads
+        bind:
+          create_host_path: false
     restart: always
     logging: *default-logging
     network_mode: "service:vpn"
@@ -215,7 +219,11 @@ services:
       - ${TV_SHOWS}:/tv_shows
       - ${KIDS_TV_SHOWS}:/kids_tv_shows
       - ${OTHER_SHOWS}:/other_shows
-      - ${QBITTORRENT_DOWNLOADS}:/downloads
+      - type: bind
+        source: ${QBITTORRENT_DOWNLOADS}
+        target: /downloads
+        bind:
+          create_host_path: false
     restart: always
     logging: *default-logging
     network_mode: "service:vpn"
@@ -265,7 +273,11 @@ services:
       - WEBUI_PORT=8080
     volumes:
       - qbittorrent_data:/config
-      - ${QBITTORRENT_DOWNLOADS}:/downloads
+      - type: bind
+        source: ${QBITTORRENT_DOWNLOADS}
+        target: /downloads
+        bind:
+          create_host_path: false
     restart: always
     logging: *default-logging
     network_mode: "service:vpn"

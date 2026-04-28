@@ -9,7 +9,6 @@ services:
   derbynet:
     container_name: derbynet
     image: jeffpiazza/derbynet_server@sha256:cf57ec34d5207f842ad961edfb9929b145dac6f4f2691a8396859e68d4e84ccd
-    user: "1000:1001"
     group_add:
       - "101"
       - "0"
@@ -30,7 +29,7 @@ services:
         aliases:
           - derbynet
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1"]
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/setup.php"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -65,8 +64,6 @@ services:
     image: itzg/minecraft-bedrock-server@sha256:406b421c5394d7fc957a2b51ca30ebd38dfe06bdee70b817ed86ac16c7bccc6b
     container_name: minecraft-survival
     environment:
-      UID: "1000"
-      GID: "1000"
       EULA: "TRUE"
       GAMEMODE: survival
       DIFFICULTY: easy
@@ -91,8 +88,6 @@ services:
     image: itzg/minecraft-bedrock-server@sha256:406b421c5394d7fc957a2b51ca30ebd38dfe06bdee70b817ed86ac16c7bccc6b
     container_name: minecraft-creative
     environment:
-      UID: "1000"
-      GID: "1000"
       EULA: "TRUE"
       GAMEMODE: creative
       DIFFICULTY: peaceful

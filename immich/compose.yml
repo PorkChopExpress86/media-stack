@@ -45,7 +45,6 @@ services:
   immich-machine-learning:
     container_name: immich_machine_learning
     image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_ML_VERSION:-${IMMICH_VERSION:-release}}
-    user: "1000:1001"
     # For hardware acceleration, add one of -[armnn, cuda, openvino] to the image tag.
     # Example: set IMMICH_ML_VERSION=v2-cuda and enable service cuda below.
     # extends:
@@ -59,7 +58,6 @@ services:
     env_file:
       - ./immich/.env
     environment: *immich_redis_env
-    read_only: true
     tmpfs:
       - /tmp
       - /run
